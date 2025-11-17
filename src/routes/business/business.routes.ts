@@ -98,9 +98,18 @@ export const BusinessParamsSchema = z.object({
 })
 
 export const BusinessQuerySchema = z.object({
-  search: z.string().optional().openapi({ param: { name: 'search', in: 'query' } }),
-  page: z.string().optional().openapi({ param: { name: 'page', in: 'query' } }),
-  limit: z.string().optional().openapi({ param: { name: 'limit', in: 'query' } }),
+  search: z
+    .string()
+    .optional()
+    .openapi({ param: { name: 'search', in: 'query' } }),
+  page: z
+    .string()
+    .optional()
+    .openapi({ param: { name: 'page', in: 'query' } }),
+  limit: z
+    .string()
+    .optional()
+    .openapi({ param: { name: 'limit', in: 'query' } }),
 })
 
 export const StudentSchema = z.object({
@@ -143,10 +152,7 @@ export const BUSINESS_ROUTES = {
         zodResponseSchema(BusinessListResponseSchema),
         'Businesses retrieved successfully'
       ),
-      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-        zodResponseSchema(),
-        'Authentication required'
-      ),
+      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
       [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
         zodResponseSchema(),
         'Failed to retrieve businesses'
@@ -169,11 +175,11 @@ export const BUSINESS_ROUTES = {
         'Business details retrieved successfully'
       ),
       [HttpStatusCodes.NOT_FOUND]: jsonContent(zodResponseSchema(), 'Business not found'),
-      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
+      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
+      [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
         zodResponseSchema(),
-        'Authentication required'
+        'Failed to retrieve business'
       ),
-      [HttpStatusCodes.INTERNAL_SERVER_ERROR]:jsonContent(zodResponseSchema(), 'Failed to retrieve business')
     },
   }),
 
@@ -191,14 +197,8 @@ export const BUSINESS_ROUTES = {
         zodResponseSchema(BusinessSchema),
         'Business created successfully'
       ),
-      [HttpStatusCodes.CONFLICT]: jsonContent(
-        zodResponseSchema(),
-        'Email already in use'
-      ),
-      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-        zodResponseSchema(),
-        'Authentication required'
-      ),
+      [HttpStatusCodes.CONFLICT]: jsonContent(zodResponseSchema(), 'Email already in use'),
+      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
       [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
         zodResponseSchema(),
         'Failed to create business'
@@ -222,10 +222,7 @@ export const BUSINESS_ROUTES = {
         'Business updated successfully'
       ),
       [HttpStatusCodes.NOT_FOUND]: jsonContent(zodResponseSchema(), 'Business not found'),
-      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-        zodResponseSchema(),
-        'Authentication required'
-      ),
+      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
       [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
         zodResponseSchema(),
         'Failed to update business'
@@ -241,10 +238,7 @@ export const BUSINESS_ROUTES = {
     description: 'Updates commission type and value for a specific business',
     request: {
       params: BusinessParamsSchema,
-      body: jsonContentRequired(
-        UpdateCommissionBodySchema,
-        'Commission update payload'
-      ),
+      body: jsonContentRequired(UpdateCommissionBodySchema, 'Commission update payload'),
     },
     responses: {
       [HttpStatusCodes.OK]: jsonContent(
@@ -257,10 +251,7 @@ export const BUSINESS_ROUTES = {
         'Commission updated successfully'
       ),
       [HttpStatusCodes.NOT_FOUND]: jsonContent(zodResponseSchema(), 'Business not found'),
-      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-        zodResponseSchema(),
-        'Authentication required'
-      ),
+      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
       [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
         zodResponseSchema(),
         'Failed to update commission'
@@ -284,10 +275,7 @@ export const BUSINESS_ROUTES = {
         'Students retrieved successfully'
       ),
       [HttpStatusCodes.NOT_FOUND]: jsonContent(zodResponseSchema(), 'Business not found'),
-      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-        zodResponseSchema(),
-        'Authentication required'
-      ),
+      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
       [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
         zodResponseSchema(),
         'Failed to retrieve students'
@@ -316,10 +304,7 @@ export const BUSINESS_ROUTES = {
         'Business status updated successfully'
       ),
       [HttpStatusCodes.NOT_FOUND]: jsonContent(zodResponseSchema(), 'Business not found'),
-      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(
-        zodResponseSchema(),
-        'Authentication required'
-      ),
+      [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
       [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
         zodResponseSchema(),
         'Failed to update status'
@@ -329,4 +314,3 @@ export const BUSINESS_ROUTES = {
 }
 
 export type BusinessRoutes = typeof BUSINESS_ROUTES
-

@@ -367,14 +367,18 @@ export async function updateBusiness(id: number, data: UpdateBusinessInput) {
     schoolName: updatedBusiness.companyName,
     email: business.user.email,
     phone: business.user.phoneNo || '',
-    status: data.status !== undefined ? (data.status ? 'Active' : 'Inactive') : (business.user.banned ? 'Inactive' : 'Active'),
+    status:
+      data.status !== undefined
+        ? data.status
+          ? 'Active'
+          : 'Inactive'
+        : business.user.banned
+          ? 'Inactive'
+          : 'Active',
   }
 }
 
-export async function updateBusinessCommission(
-  businessId: number,
-  data: UpdateCommissionInput
-) {
+export async function updateBusinessCommission(businessId: number, data: UpdateCommissionInput) {
   const business = await prisma.businessOrganization.findUnique({
     where: { id: businessId },
   })
@@ -497,4 +501,3 @@ export async function toggleBusinessStatus(id: number, status: boolean) {
     status: status ? 'Active' : 'Inactive',
   }
 }
-

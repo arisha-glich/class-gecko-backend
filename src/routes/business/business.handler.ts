@@ -2,11 +2,11 @@ import * as HttpStatusCodes from 'stoker/http-status-codes'
 import type { BUSINESS_ROUTES } from '~/routes/business/business.routes'
 import {
   BusinessNotFoundError,
-  EmailAlreadyUsedError,
   createBusiness,
+  EmailAlreadyUsedError,
   getBusinessById,
-  getBusinessStudents,
   getBusinesses,
+  getBusinessStudents,
   toggleBusinessStatus,
   updateBusiness,
   updateBusinessCommission,
@@ -107,10 +107,7 @@ export const BUSINESS_HANDLER: HandlerMapFromRoutes<typeof BUSINESS_ROUTES> = {
         return c.json({ message: 'Email already in use' }, HttpStatusCodes.CONFLICT)
       }
       console.error('Error creating business:', error)
-      return c.json(
-        { message: 'Failed to create business' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to create business' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -146,10 +143,7 @@ export const BUSINESS_HANDLER: HandlerMapFromRoutes<typeof BUSINESS_ROUTES> = {
         return c.json({ message: 'Business not found' }, HttpStatusCodes.NOT_FOUND)
       }
       console.error('Error updating business:', error)
-      return c.json(
-        { message: 'Failed to update business' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to update business' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -247,11 +241,7 @@ export const BUSINESS_HANDLER: HandlerMapFromRoutes<typeof BUSINESS_ROUTES> = {
         return c.json({ message: 'Business not found' }, HttpStatusCodes.NOT_FOUND)
       }
       console.error('Error toggling status:', error)
-      return c.json(
-        { message: 'Failed to update status' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to update status' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 }
-
