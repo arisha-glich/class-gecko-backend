@@ -1,0 +1,634 @@
+# Drop-In Classes: Students & Lessons API
+
+This document explains how frontend developers can integrate with the drop-in class booking (student enrollment) and lesson management endpoints.
+
+## Base URL
+
+```
+http://localhost:8080
+```
+
+All endpoints require an authenticated organization session (Better Auth cookie `better-auth.session_token`). In fetch requests, use `credentials: 'include'`.
+
+---
+
+## Drop-In Class Bookings (Student Enrollments)
+
+Drop-in class bookings allow students to enroll in drop-in classes. Unlike regular class enrollments, these are not tied to terms/seasons.
+
+### Create a Drop-In Booking
+
+Enroll a student in a drop-in class.
+
+**Endpoint:** `POST /dropin-bookings`
+
+**Request Body:**
+```json
+{
+  "dropInClassId": 1,
+  "studentId": 5,
+  "enrollmentDate": "2025-06-15T10:00:00.000Z",
+  "paymentOption": "Upfront",
+  "status": "Active"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Drop-in booking created successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "userId": "org-user-id",
+    "dropInClassId": 1,
+    "studentId": 5,
+    "enrollmentDate": "2025-06-15T10:00:00.000Z",
+    "paymentOption": "Upfront",
+    "status": "Active",
+    "date": "2025-01-01T00:00:00.000Z",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "dropInClass": {
+      "id": 1,
+      "title": "Drop-In Tumbling",
+      "description": "Single-session clinic",
+      "startDate": "2025-06-15T00:00:00.000Z",
+      "endDate": "2025-06-15T02:00:00.000Z",
+      "pricingPerLesson": 35,
+      "teacher": {
+        "id": 7,
+        "firstName": "Jane",
+        "lastName": "Smith",
+        "email": "jane@example.com"
+      },
+      "location": {
+        "id": 4,
+        "name": "Main Gym",
+        "address": "123 Main St"
+      }
+    },
+    "student": {
+      "id": 5,
+      "firstName": "Alice",
+      "lastName": "Johnson",
+      "familyId": 3,
+      "medicalInfo": "No allergies",
+      "photoVideoConsent": true
+    }
+  }
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('http://localhost:8080/dropin-bookings', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    dropInClassId: 1,
+    studentId: 5,
+    enrollmentDate: '2025-06-15T10:00:00.000Z',
+    paymentOption: 'Upfront',
+    status: 'Active',
+  }),
+})
+
+const data = await response.json()
+```
+
+---
+
+### Get All Drop-In Bookings
+
+Retrieve all drop-in bookings for the authenticated user.
+
+**Endpoint:** `GET /dropin-bookings`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in bookings retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "userId": "org-user-id",
+      "dropInClassId": 1,
+      "studentId": 5,
+      "enrollmentDate": "2025-06-15T10:00:00.000Z",
+      "paymentOption": "Upfront",
+      "status": "Active",
+      "date": "2025-01-01T00:00:00.000Z",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z",
+      "dropInClass": {
+        "id": 1,
+        "title": "Drop-In Tumbling",
+        "teacher": { ... },
+        "location": { ... }
+      },
+      "student": {
+        "id": 5,
+        "firstName": "Alice",
+        "lastName": "Johnson",
+        "familyId": 3
+      }
+    }
+  ]
+}
+```
+
+---
+
+### Get Drop-In Booking by ID
+
+Retrieve a specific drop-in booking.
+
+**Endpoint:** `GET /dropin-bookings/{id}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in booking retrieved successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "userId": "org-user-id",
+    "dropInClassId": 1,
+    "studentId": 5,
+    "enrollmentDate": "2025-06-15T10:00:00.000Z",
+    "paymentOption": "Upfront",
+    "status": "Active",
+    "date": "2025-01-01T00:00:00.000Z",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "dropInClass": { ... },
+    "student": { ... }
+  }
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Drop-in booking not found"
+}
+```
+
+---
+
+### Get Drop-In Bookings by Class
+
+Retrieve all bookings for a specific drop-in class.
+
+**Endpoint:** `GET /dropin-bookings/class/{classId}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in bookings retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "studentId": 5,
+      "enrollmentDate": "2025-06-15T10:00:00.000Z",
+      "status": "Active",
+      "student": {
+        "id": 5,
+        "firstName": "Alice",
+        "lastName": "Johnson",
+        "familyId": 3,
+        "medicalInfo": "No allergies",
+        "photoVideoConsent": true
+      }
+    }
+  ]
+}
+```
+
+---
+
+### Update Drop-In Booking
+
+Update an existing drop-in booking.
+
+**Endpoint:** `PATCH /dropin-bookings/{id}`
+
+**Request Body:** (All fields optional)
+```json
+{
+  "dropInClassId": 2,
+  "studentId": 6,
+  "enrollmentDate": "2025-06-20T10:00:00.000Z",
+  "paymentOption": "Monthly",
+  "status": "Cancelled"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in booking updated successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "dropInClassId": 2,
+    "studentId": 6,
+    "status": "Cancelled",
+    ...
+  }
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Drop-in booking not found"
+}
+```
+
+---
+
+### Delete Drop-In Booking
+
+Remove a drop-in booking.
+
+**Endpoint:** `DELETE /dropin-bookings/{id}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in booking deleted successfully",
+  "success": true
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Drop-in booking not found"
+}
+```
+
+---
+
+## Drop-In Lessons
+
+Drop-in lessons are individual sessions within a drop-in class. They are similar to regular lessons but are not tied to terms/seasons.
+
+### Create a Drop-In Lesson
+
+Create a new lesson for a drop-in class.
+
+**Endpoint:** `POST /dropin-lessons`
+
+**Request Body:**
+```json
+{
+  "dropInClassId": 1,
+  "title": "Week 1: Basic Tumbling",
+  "status": "scheduled",
+  "notes": "Focus on forward rolls",
+  "date": "2025-06-15T10:00:00.000Z",
+  "startTime": "10:00",
+  "endTime": "12:00",
+  "duration": 120
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Drop-in lesson created successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "dropInClassId": 1,
+    "title": "Week 1: Basic Tumbling",
+    "status": "scheduled",
+    "notes": "Focus on forward rolls",
+    "date": "2025-06-15T10:00:00.000Z",
+    "startTime": "10:00",
+    "endTime": "12:00",
+    "duration": 120,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "dropInClass": {
+      "id": 1,
+      "title": "Drop-In Tumbling",
+      "description": "Single-session clinic",
+      "startDate": "2025-06-15T00:00:00.000Z",
+      "endDate": "2025-06-15T02:00:00.000Z",
+      "teacher": { ... },
+      "location": { ... }
+    }
+  }
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('http://localhost:8080/dropin-lessons', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    dropInClassId: 1,
+    title: 'Week 1: Basic Tumbling',
+    status: 'scheduled',
+    notes: 'Focus on forward rolls',
+    date: '2025-06-15T10:00:00.000Z',
+    startTime: '10:00',
+    endTime: '12:00',
+    duration: 120,
+  }),
+})
+
+const data = await response.json()
+```
+
+---
+
+### Get All Drop-In Lessons
+
+Retrieve all drop-in lessons.
+
+**Endpoint:** `GET /dropin-lessons`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in lessons retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "dropInClassId": 1,
+      "title": "Week 1: Basic Tumbling",
+      "status": "scheduled",
+      "notes": "Focus on forward rolls",
+      "date": "2025-06-15T10:00:00.000Z",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "duration": 120,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z",
+      "dropInClass": {
+        "id": 1,
+        "title": "Drop-In Tumbling",
+        "teacher": { ... },
+        "location": { ... }
+      }
+    }
+  ]
+}
+```
+
+---
+
+### Get Drop-In Lesson by ID
+
+Retrieve a specific drop-in lesson.
+
+**Endpoint:** `GET /dropin-lessons/{id}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in lesson retrieved successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "dropInClassId": 1,
+    "title": "Week 1: Basic Tumbling",
+    "status": "scheduled",
+    "notes": "Focus on forward rolls",
+    "date": "2025-06-15T10:00:00.000Z",
+    "startTime": "10:00",
+    "endTime": "12:00",
+    "duration": 120,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "dropInClass": { ... }
+  }
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Drop-in lesson not found"
+}
+```
+
+---
+
+### Get Drop-In Lessons by Class
+
+Retrieve all lessons for a specific drop-in class.
+
+**Endpoint:** `GET /dropin-lessons/class/{classId}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in lessons retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "dropInClassId": 1,
+      "title": "Week 1: Basic Tumbling",
+      "status": "scheduled",
+      "date": "2025-06-15T10:00:00.000Z",
+      "startTime": "10:00",
+      "endTime": "12:00",
+      "duration": 120,
+      "dropInClass": { ... }
+    }
+  ]
+}
+```
+
+---
+
+### Update Drop-In Lesson
+
+Update an existing drop-in lesson.
+
+**Endpoint:** `PATCH /dropin-lessons/{id}`
+
+**Request Body:** (All fields optional)
+```json
+{
+  "dropInClassId": 2,
+  "title": "Week 2: Advanced Tumbling",
+  "status": "completed",
+  "notes": "Great progress!",
+  "date": "2025-06-22T10:00:00.000Z",
+  "startTime": "10:00",
+  "endTime": "12:00",
+  "duration": 120
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in lesson updated successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "title": "Week 2: Advanced Tumbling",
+    "status": "completed",
+    ...
+  }
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Drop-in lesson not found"
+}
+```
+
+---
+
+### Delete Drop-In Lesson
+
+Remove a drop-in lesson.
+
+**Endpoint:** `DELETE /dropin-lessons/{id}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Drop-in lesson deleted successfully",
+  "success": true
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Drop-in lesson not found"
+}
+```
+
+---
+
+## Error Responses
+
+All endpoints may return the following error responses:
+
+- **401 Unauthorized**: Authentication required
+  ```json
+  {
+    "message": "Unauthorized"
+  }
+  ```
+
+- **404 Not Found**: Resource not found
+  ```json
+  {
+    "message": "Resource not found"
+  }
+  ```
+
+- **500 Internal Server Error**: Server error
+  ```json
+  {
+    "message": "Failed to perform operation"
+  }
+  ```
+
+---
+
+## Integration Notes
+
+1. **Authentication**: All endpoints require authentication. Ensure cookies are included in requests (`credentials: 'include'` in fetch).
+
+2. **Student Enrollment**: Before creating a booking, ensure the student exists. Use the `/students` endpoints to manage students.
+
+3. **Class Validation**: Before creating a lesson or booking, ensure the drop-in class exists. Use the `/dropin-classes` endpoints to manage classes.
+
+4. **Date Formats**: All dates should be in ISO 8601 format (e.g., `2025-06-15T10:00:00.000Z`).
+
+5. **Time Formats**: Time fields (`startTime`, `endTime`) should be in `HH:mm` format (e.g., `10:00`, `14:30`).
+
+6. **Status Values**: Common status values for bookings include: `Active`, `Cancelled`, `Completed`. For lessons: `scheduled`, `completed`, `cancelled`.
+
+---
+
+## Complete Workflow Example
+
+Here's a complete example of enrolling a student in a drop-in class and creating a lesson:
+
+```typescript
+// 1. Create a drop-in class (if not exists)
+const classResponse = await fetch('http://localhost:8080/dropin-classes', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    title: 'Drop-In Tumbling',
+    startDate: '2025-06-15T00:00:00.000Z',
+    endDate: '2025-06-15T02:00:00.000Z',
+    frequency: 'WEEKLY',
+    startTimeOfClass: '10:00',
+    duration: 120,
+    pricingPerLesson: 35,
+  }),
+})
+const classData = await classResponse.json()
+const dropInClassId = classData.data.id
+
+// 2. Enroll a student
+const bookingResponse = await fetch('http://localhost:8080/dropin-bookings', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    dropInClassId: dropInClassId,
+    studentId: 5,
+    enrollmentDate: '2025-06-15T10:00:00.000Z',
+    paymentOption: 'Upfront',
+    status: 'Active',
+  }),
+})
+const bookingData = await bookingResponse.json()
+
+// 3. Create a lesson
+const lessonResponse = await fetch('http://localhost:8080/dropin-lessons', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    dropInClassId: dropInClassId,
+    title: 'Week 1: Basic Tumbling',
+    status: 'scheduled',
+    date: '2025-06-15T10:00:00.000Z',
+    startTime: '10:00',
+    endTime: '12:00',
+    duration: 120,
+  }),
+})
+const lessonData = await lessonResponse.json()
+```
+
+---
+
+## Related Documentation
+
+- [Drop-In Classes API](./dropin-classes-api.md) - Managing drop-in classes
+- [Students API](./frontend-integration.md#students) - Managing students
+- [Frontend Integration Guide](./frontend-integration.md) - General API documentation
+

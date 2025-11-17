@@ -1,0 +1,798 @@
+# Management APIs
+
+This document explains how frontend developers can integrate with the management endpoints for Registration Fees, Custom Fields, Holidays, Locations, and Waivers & Policies.
+
+## Base URL
+
+```
+http://localhost:8080
+```
+
+All endpoints require an authenticated organization session (Better Auth cookie `better-auth.session_token`). In fetch requests, use `credentials: 'include'`.
+
+---
+
+## Registration Fees API
+
+Registration fees allow you to set up fees that apply per student with optional maximum per family limits and renewal schedules.
+
+### Data Model
+
+```json
+{
+  "id": 1,
+  "userId": "org-user-id",
+  "title": "Annual Registration Fee",
+  "pricePerStudent": 44.00,
+  "maxPerFamily": 5.00,
+  "renewalType": "Annual",
+  "renewalDate": "2025-01-03T00:00:00.000Z",
+  "isActive": true,
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+### Create Registration Fee
+
+**Endpoint:** `POST /registration-fees`
+
+**Request Body:**
+```json
+{
+  "title": "Annual Registration Fee",
+  "pricePerStudent": 44.00,
+  "maxPerFamily": 5.00,
+  "renewalType": "Annual",
+  "renewalDate": "2025-01-03T00:00:00.000Z",
+  "isActive": true
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Registration fee created successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "userId": "org-user-id",
+    "title": "Annual Registration Fee",
+    "pricePerStudent": 44.00,
+    "maxPerFamily": 5.00,
+    "renewalType": "Annual",
+    "renewalDate": "2025-01-03T00:00:00.000Z",
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Get All Registration Fees
+
+**Endpoint:** `GET /registration-fees`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Registration fees retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "title": "Annual Registration Fee",
+      "pricePerStudent": 44.00,
+      "maxPerFamily": 5.00,
+      "renewalType": "Annual",
+      "renewalDate": "2025-01-03T00:00:00.000Z",
+      "isActive": true
+    }
+  ]
+}
+```
+
+### Get Registration Fee by ID
+
+**Endpoint:** `GET /registration-fees/{id}`
+
+### Update Registration Fee
+
+**Endpoint:** `PATCH /registration-fees/{id}`
+
+**Request Body:** (All fields optional)
+```json
+{
+  "title": "Updated Registration Fee",
+  "pricePerStudent": 50.00,
+  "isActive": false
+}
+```
+
+### Delete Registration Fee
+
+**Endpoint:** `DELETE /registration-fees/{id}`
+
+---
+
+## Custom Fields API
+
+Custom fields allow you to create additional data collection fields that can be applied to different entities (Families, Students, Classes, etc.).
+
+### Data Model
+
+```json
+{
+  "id": 1,
+  "userId": "org-user-id",
+  "appliesTo": "Families",
+  "question": "What are you doing?",
+  "answerType": "Short Text",
+  "options": null,
+  "isRequired": false,
+  "isActive": true,
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+### Answer Types
+
+- **Short Text**: Single-line text input
+- **Long Text**: Multi-line text area
+- **Number**: Numeric input
+- **Date**: Date picker
+- **Select One**: Dropdown with single selection (requires `options` array)
+- **Select Multiple**: Multi-select dropdown (requires `options` array)
+- **Checkbox**: Boolean checkbox
+
+### Create Custom Field
+
+**Endpoint:** `POST /custom-fields`
+
+**Request Body:**
+```json
+{
+  "appliesTo": "Families",
+  "question": "What are you doing?",
+  "answerType": "Short Text",
+  "options": null,
+  "isRequired": false,
+  "isActive": true
+}
+```
+
+**Example with Select One:**
+```json
+{
+  "appliesTo": "Students",
+  "question": "Preferred Communication Method",
+  "answerType": "Select One",
+  "options": ["Email", "Phone", "Text", "Mail"],
+  "isRequired": true,
+  "isActive": true
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Custom field created successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "userId": "org-user-id",
+    "appliesTo": "Families",
+    "question": "What are you doing?",
+    "answerType": "Short Text",
+    "options": null,
+    "isRequired": false,
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Get All Custom Fields
+
+**Endpoint:** `GET /custom-fields`
+
+### Get Custom Field by ID
+
+**Endpoint:** `GET /custom-fields/{id}`
+
+### Update Custom Field
+
+**Endpoint:** `PATCH /custom-fields/{id}`
+
+**Request Body:** (All fields optional)
+```json
+{
+  "question": "Updated question?",
+  "isActive": false
+}
+```
+
+### Delete Custom Field
+
+**Endpoint:** `DELETE /custom-fields/{id}`
+
+---
+
+## Holidays API
+
+Holidays allow you to manage holiday schedules that can optionally affect class scheduling.
+
+### Data Model
+
+```json
+{
+  "id": 1,
+  "userId": "org-user-id",
+  "name": "Labor Day",
+  "isRecurring": false,
+  "affectsClass": true,
+  "startDate": "2024-09-02T00:00:00.000Z",
+  "endDate": "2024-09-02T23:59:59.000Z",
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+### Create Holiday
+
+**Endpoint:** `POST /holidays`
+
+**Request Body:**
+```json
+{
+  "name": "Labor Day",
+  "isRecurring": false,
+  "affectsClass": true,
+  "startDate": "2024-09-02T00:00:00.000Z",
+  "endDate": "2024-09-02T23:59:59.000Z"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Holiday created successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "userId": "org-user-id",
+    "name": "Labor Day",
+    "isRecurring": false,
+    "affectsClass": true,
+    "startDate": "2024-09-02T00:00:00.000Z",
+    "endDate": "2024-09-02T23:59:59.000Z",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Get All Holidays
+
+**Endpoint:** `GET /holidays`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Holidays retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 239676,
+      "name": "Labor Day",
+      "startDate": "2024-09-02T00:00:00.000Z",
+      "endDate": "2024-09-02T23:59:59.000Z",
+      "isRecurring": false,
+      "affectsClass": true
+    },
+    {
+      "id": 876909,
+      "name": "Thanksgiving",
+      "startDate": "2024-11-28T00:00:00.000Z",
+      "endDate": "2024-11-28T23:59:59.000Z",
+      "isRecurring": false,
+      "affectsClass": true
+    }
+  ]
+}
+```
+
+**Note:** Holidays are ordered by `startDate` in ascending order.
+
+### Get Holiday by ID
+
+**Endpoint:** `GET /holidays/{id}`
+
+### Update Holiday
+
+**Endpoint:** `PATCH /holidays/{id}`
+
+**Request Body:** (All fields optional)
+```json
+{
+  "name": "Updated Holiday Name",
+  "affectsClass": false
+}
+```
+
+### Delete Holiday
+
+**Endpoint:** `DELETE /holidays/{id}`
+
+---
+
+## Locations API
+
+Locations represent physical venues where classes are held.
+
+### Data Model
+
+```json
+{
+  "id": 1,
+  "name": "Main Gym",
+  "address": "123 Main Street, City, State 12345",
+  "createdAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+### Create Location
+
+**Endpoint:** `POST /locations`
+
+**Request Body:**
+```json
+{
+  "name": "Main Gym",
+  "address": "123 Main Street, City, State 12345"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Location created successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Main Gym",
+    "address": "123 Main Street, City, State 12345",
+    "createdAt": "2025-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Get All Locations
+
+**Endpoint:** `GET /locations`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Locations retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "Main Gym",
+      "address": "123 Main Street, City, State 12345",
+      "createdAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "1 Room",
+      "address": "456 Second Avenue, City, State 12345",
+      "createdAt": "2025-01-02T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### Get Location by ID
+
+**Endpoint:** `GET /locations/{id}`
+
+### Update Location
+
+**Endpoint:** `PATCH /locations/{id}`
+
+**Request Body:** (All fields optional)
+```json
+{
+  "name": "Updated Location Name",
+  "address": "Updated Address"
+}
+```
+
+### Delete Location
+
+**Endpoint:** `DELETE /locations/{id}`
+
+---
+
+## Waivers & Policies API
+
+Waivers and policies allow you to manage terms & conditions, privacy policies, and other legal documents.
+
+### Data Model
+
+```json
+{
+  "id": 1,
+  "userId": "org-user-id",
+  "title": "Terms & Condition",
+  "description": "Please contact Dynamics for details.",
+  "permission": "REQUIRED",
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+### Create Waiver/Policy
+
+**Endpoint:** `POST /waivers-policies`
+
+**Request Body:**
+```json
+{
+  "title": "Terms & Condition",
+  "description": "Please contact Dynamics for details.",
+  "permission": "REQUIRED"
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Waiver/policy created successfully",
+  "success": true,
+  "data": {
+    "id": 1,
+    "userId": "org-user-id",
+    "title": "Terms & Condition",
+    "description": "Please contact Dynamics for details.",
+    "permission": "REQUIRED",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
+  }
+}
+```
+
+### Get All Waivers/Policies
+
+**Endpoint:** `GET /waivers-policies`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Waivers/policies retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "title": "Terms & Condition",
+      "description": "Please contact Dynamics for details.",
+      "permission": "REQUIRED"
+    },
+    {
+      "id": 2,
+      "title": "Privacy Policy",
+      "description": "Please contact Dynamics for details.",
+      "permission": "OPTIONAL"
+    }
+  ]
+}
+```
+
+### Get Waiver/Policy by ID
+
+**Endpoint:** `GET /waivers-policies/{id}`
+
+### Update Waiver/Policy
+
+**Endpoint:** `PATCH /waivers-policies/{id}`
+
+**Request Body:** (All fields optional)
+```json
+{
+  "title": "Updated Terms & Condition",
+  "description": "Updated description text."
+}
+```
+
+### Delete Waiver/Policy
+
+**Endpoint:** `DELETE /waivers-policies/{id}`
+
+---
+
+## Error Responses
+
+All endpoints may return the following error responses:
+
+- **401 Unauthorized**: Authentication required
+  ```json
+  {
+    "message": "Unauthorized"
+  }
+  ```
+
+- **404 Not Found**: Resource not found
+  ```json
+  {
+    "message": "Resource not found"
+  }
+  ```
+
+- **500 Internal Server Error**: Server error
+  ```json
+  {
+    "message": "Failed to perform operation"
+  }
+  ```
+
+---
+
+## Integration Notes
+
+1. **Authentication**: All endpoints require authentication. Ensure cookies are included in requests (`credentials: 'include'` in fetch).
+
+2. **Date Formats**: All dates should be in ISO 8601 format (e.g., `2025-01-01T00:00:00.000Z`).
+
+3. **Custom Field Options**: For "Select One" and "Select Multiple" answer types, provide an array of strings in the `options` field:
+   ```json
+   {
+     "options": ["Option 1", "Option 2", "Option 3"]
+   }
+   ```
+
+4. **Registration Fee Renewal Types**: Common values include:
+   - `"Annual"` - Renews yearly
+   - `"Monthly"` - Renews monthly
+   - `"One-time"` - Single payment
+   - `"Quarterly"` - Renews every 3 months
+   - `"Semi-annual"` - Renews every 6 months
+
+5. **Holiday Recurring**: Set `isRecurring: true` for holidays that repeat annually (e.g., Christmas, New Year's Day).
+
+6. **Location Usage**: Locations are shared across the organization and can be used when creating classes or drop-in classes.
+
+7. **Waiver/Policy Permissions**: Common values include:
+   - `"REQUIRED"` - Must be accepted
+   - `"OPTIONAL"` - Can be accepted optionally
+   - `"INFORMATIONAL"` - For information only
+
+---
+
+## Complete Workflow Examples
+
+### Registration Fee Workflow
+
+```typescript
+// 1. Create a registration fee
+const feeResponse = await fetch('http://localhost:8080/registration-fees', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    title: 'Annual Registration Fee',
+    pricePerStudent: 44.00,
+    maxPerFamily: 5.00,
+    renewalType: 'Annual',
+    renewalDate: '2025-01-03T00:00:00.000Z',
+    isActive: true,
+  }),
+})
+const fee = await feeResponse.json()
+
+// 2. Get all registration fees
+const feesResponse = await fetch('http://localhost:8080/registration-fees', {
+  method: 'GET',
+  credentials: 'include',
+})
+const fees = await feesResponse.json()
+```
+
+### Custom Field Workflow
+
+```typescript
+// 1. Create a custom field for families
+const fieldResponse = await fetch('http://localhost:8080/custom-fields', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    appliesTo: 'Families',
+    question: 'What are you doing?',
+    answerType: 'Short Text',
+    isRequired: false,
+    isActive: true,
+  }),
+})
+const field = await fieldResponse.json()
+
+// 2. Create a select field
+const selectFieldResponse = await fetch('http://localhost:8080/custom-fields', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    appliesTo: 'Students',
+    question: 'Preferred Communication Method',
+    answerType: 'Select One',
+    options: ['Email', 'Phone', 'Text', 'Mail'],
+    isRequired: true,
+    isActive: true,
+  }),
+})
+```
+
+### Holiday Workflow
+
+```typescript
+// 1. Create a holiday
+const holidayResponse = await fetch('http://localhost:8080/holidays', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    name: 'Labor Day',
+    isRecurring: false,
+    affectsClass: true,
+    startDate: '2024-09-02T00:00:00.000Z',
+    endDate: '2024-09-02T23:59:59.000Z',
+  }),
+})
+const holiday = await holidayResponse.json()
+
+// 2. Get all holidays (sorted by start date)
+const holidaysResponse = await fetch('http://localhost:8080/holidays', {
+  method: 'GET',
+  credentials: 'include',
+})
+const holidays = await holidaysResponse.json()
+```
+
+### Location Workflow
+
+```typescript
+// 1. Create a location
+const locationResponse = await fetch('http://localhost:8080/locations', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    name: 'Main Gym',
+    address: '123 Main Street, City, State 12345',
+  }),
+})
+const location = await locationResponse.json()
+
+// 2. Get all locations
+const locationsResponse = await fetch('http://localhost:8080/locations', {
+  method: 'GET',
+  credentials: 'include',
+})
+const locations = await locationsResponse.json()
+```
+
+### Waiver/Policy Workflow
+
+```typescript
+// 1. Create a terms & conditions policy
+const policyResponse = await fetch('http://localhost:8080/waivers-policies', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    title: 'Terms & Condition',
+    description: 'Please contact Dynamics for details.',
+    permission: 'REQUIRED',
+  }),
+})
+const policy = await policyResponse.json()
+
+// 2. Get all waivers/policies
+const policiesResponse = await fetch('http://localhost:8080/waivers-policies', {
+  method: 'GET',
+  credentials: 'include',
+})
+const policies = await policiesResponse.json()
+```
+
+---
+
+## Testing with cURL
+
+### Registration Fees
+
+```bash
+# Create
+curl -X POST http://localhost:8080/registration-fees \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Annual Registration Fee",
+    "pricePerStudent": 44.00,
+    "maxPerFamily": 5.00,
+    "renewalType": "Annual",
+    "renewalDate": "2025-01-03T00:00:00.000Z"
+  }'
+
+# Get all
+curl -X GET http://localhost:8080/registration-fees \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN"
+```
+
+### Custom Fields
+
+```bash
+# Create
+curl -X POST http://localhost:8080/custom-fields \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "appliesTo": "Families",
+    "question": "What are you doing?",
+    "answerType": "Short Text",
+    "isActive": true
+  }'
+```
+
+### Holidays
+
+```bash
+# Create
+curl -X POST http://localhost:8080/holidays \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Labor Day",
+    "startDate": "2024-09-02T00:00:00.000Z",
+    "endDate": "2024-09-02T23:59:59.000Z",
+    "affectsClass": true
+  }'
+```
+
+### Locations
+
+```bash
+# Create
+curl -X POST http://localhost:8080/locations \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Main Gym",
+    "address": "123 Main Street, City, State 12345"
+  }'
+```
+
+### Waivers & Policies
+
+```bash
+# Create
+curl -X POST http://localhost:8080/waivers-policies \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Terms & Condition",
+    "description": "Please contact Dynamics for details.",
+    "permission": "REQUIRED"
+  }'
+```
+
+---
+
+## Related Documentation
+
+- [Frontend Integration Guide](./frontend-integration.md) - General API documentation
+- [Discount Schemes API](./discounts-schemes-api.mdx) - Discount management
+- [Drop-in Classes API](./dropin-students-lessons-api.mdx) - Drop-in class management
+

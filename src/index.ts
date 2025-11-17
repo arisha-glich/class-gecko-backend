@@ -1,8 +1,13 @@
 import { cors } from 'hono/cors'
 import { registerRoutes } from '~/app'
+import { ALLOWED_ORIGINS_MUTABLE } from '~/config/origins'
 import { auth } from '~/lib/auth'
 import configureOpenAPI from '~/lib/configure-open-api'
 import createApp from '~/lib/create-app'
+import { registerEmailListeners } from '~/services/email-helpers'
+
+// Initialize email listeners
+registerEmailListeners()
 
 // parseENV()
 const app = createApp()
@@ -21,9 +26,9 @@ app.use('*', async (c, next) => {
 app.use(
   '*', // or replace with "*" to enable cors for all routes
   cors({
-    origin: 'http://localhost:3001', // replace with your origin
+    origin: ALLOWED_ORIGINS_MUTABLE,
     allowHeaders: ['Content-Type', 'Authorization'],
-    allowMethods: ['POST', 'GET', 'OPTIONS'],
+    allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE', 'PATCH'],
     exposeHeaders: ['Content-Length'],
     maxAge: 600,
     credentials: true,

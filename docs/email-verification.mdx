@@ -1,0 +1,420 @@
+# Email Verification - Frontend Integration Guide
+
+This guide explains how to integrate email verification in your frontend application with the Class Gecko backend.
+
+## Overview
+
+The backend automatically sends verification emails when users sign up. Your frontend needs to:
+1. Handle the sign-up flow
+2. Display verification status
+3. Handle email verification link clicks
+4. Show appropriate UI states
+
+## Backend API Endpoints
+
+### Sign Up
+
+**Endpoint**: `POST /api/auth/sign-up/email`
+
+**Request Body**:
+```json
+{
+  "email": "user@example.com",
+  "password": "securepassword123",
+  "name": "John Doe",
+  "role": "FAMILY"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "user": {
+    "id": "clx123...",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "emailVerified": false,
+    "createdAt": "2024-01-01T00:00:00.000Z"
+  },
+  "token": "session_token_here"
+}
+```
+
+**Note**: A verification email is automatically sent to the user's email address upon successful sign-up.
+
+### Verify Email
+
+**Endpoint**: `GET /api/auth/verify-email?token={verification_token}`
+
+This endpoint is called automatically when the user clicks the verification link in their email. The backend handles the verification and redirects accordingly.
+
+**Query Parameters**:
+- `token`: The verification token from the email link
+
+**Response**: Redirects to the configured callback URL or returns success status.
+
+### Check Verification Status
+
+**Endpoint**: `GET /api/auth/get-session`
+
+**Response**:
+```json
+{
+  "user": {
+    "id": "clx123...",
+    "email": "user@example.com",
+    "emailVerified": true,  // or false
+    ...
+  },
+  "session": { ... }
+}
+```
+
+### Resend Verification Email
+
+**Endpoint**: `POST /api/auth/send-verification-email`
+
+**Request Body**:
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response** (200 OK):
+```json
+{
+  "message": "Verification email sent"
+}
+```
+
+## Frontend Implementation
+
+### 1. Sign Up Flow
+
+```typescript
+async function handleSignUp(email: string, password: string, name: string) {
+  try {
+    const response = await fetch('http://localhost:8080/api/auth/sign-up/email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        name,
+        role: 'FAMILY', // or other role
+      }),
+    })
+
+    if (response.ok) {
+      const data = await response.json()
+
+      // Show success message
+      showMessage('Account created! Please check your email to verify your account.')
+
+      // Redirect to verification pending page
+      router.push('/verify-email-pending')
+    } else {
+      const error = await response.json()
+      showError(error.message || 'Sign up failed')
+    }
+  } catch (error) {
+    showError('Network error. Please try again.')
+  }
+}
+```
+
+### 2. Verification Pending Page
+
+Create a page that shows after sign-up:
+
+```tsx
+export function VerifyEmailPending() {
+  return (
+    <div className="verify-email-pending">
+      <h1>Check Your Email</h1>
+      <p>We've sent a verification link to your email address.</p>
+      <p>Please check your inbox and click the link to verify your account.</p>
+
+      <button onClick={handleResendVerification}>
+        Resend Verification Email
+      </button>
+    </div>
+  )
+}
+
+async function handleResendVerification() {
+  const email = getStoredEmail() // Get email from sign-up flow
+
+  try {
+    await fetch('http://localhost:8080/api/auth/send-verification-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+
+    showMessage('Verification email sent!')
+  } catch (error) {
+    showError('Failed to resend email')
+  }
+}
+```
+
+### 3. Handle Verification Link
+
+When the user clicks the verification link in their email, they'll be redirected to your backend, which then redirects to your frontend. Handle this in your verification success page:
+
+```tsx
+export function VerifyEmailSuccess() {
+  useEffect(() => {
+    // Check if verification was successful
+    checkVerificationStatus()
+  }, [])
+
+  async function checkVerificationStatus() {
+    try {
+      const response = await fetch('http://localhost:8080/api/auth/get-session', {
+        credentials: 'include', // Important for cookies
+      })
+
+      const data = await response.json()
+
+      if (data.user?.emailVerified) {
+        showMessage('Email verified successfully!')
+        router.push('/dashboard')
+      } else {
+        showError('Verification failed. Please try again.')
+      }
+    } catch (error) {
+      showError('Failed to verify email status')
+    }
+  }
+
+  return (
+    <div className="verify-email-success">
+      <h1>Verifying your email...</h1>
+      <p>Please wait while we verify your email address.</p>
+    </div>
+  )
+}
+```
+
+### 4. Check Verification Status on Login
+
+```typescript
+async function checkUserVerification() {
+  try {
+    const response = await fetch('http://localhost:8080/api/auth/get-session', {
+      credentials: 'include',
+    })
+
+    const data = await response.json()
+
+    if (data.user && !data.user.emailVerified) {
+      // Show banner or redirect to verification page
+      showVerificationBanner()
+    }
+  } catch (error) {
+    console.error('Failed to check verification status')
+  }
+}
+```
+
+### 5. Verification Banner Component
+
+```tsx
+export function VerificationBanner() {
+  const [email, setEmail] = useState('')
+
+  useEffect(() => {
+    // Get user email from session
+    fetch('http://localhost:8080/api/auth/get-session', {
+      credentials: 'include',
+    })
+      .then(res => res.json())
+      .then(data => setEmail(data.user?.email))
+  }, [])
+
+  async function handleResend() {
+    try {
+      await fetch('http://localhost:8080/api/auth/send-verification-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      showMessage('Verification email sent!')
+    } catch (error) {
+      showError('Failed to resend email')
+    }
+  }
+
+  return (
+    <div className="verification-banner">
+      <p>Please verify your email address to access all features.</p>
+      <button onClick={handleResend}>Resend Verification Email</button>
+    </div>
+  )
+}
+```
+
+## Email Verification Flow Diagram
+
+```
+User Signs Up
+    ↓
+Backend Creates Account
+    ↓
+Backend Sends Verification Email (Automatic)
+    ↓
+User Receives Email
+    ↓
+User Clicks Verification Link
+    ↓
+Backend Verifies Email
+    ↓
+User Redirected to Frontend
+    ↓
+Frontend Checks Verification Status
+    ↓
+User Can Access Protected Features
+```
+
+## Configuration
+
+### Backend Environment Variables
+
+The backend requires these environment variables (already configured):
+
+```env
+RESEND_API_KEY=re_xxxxxxxxxxxxx
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+BETTER_AUTH_URL=http://localhost:8080
+BASE_URL=http://localhost:8080
+```
+
+### Frontend Configuration
+
+Configure your frontend to use the correct backend URL:
+
+```typescript
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+```
+
+## Error Handling
+
+### Common Errors
+
+1. **Email Already Exists**
+   - Status: 422
+   - Message: "User already exists"
+   - Action: Show error, allow user to sign in instead
+
+2. **Invalid Token**
+   - Status: 400
+   - Message: "Invalid or expired token"
+   - Action: Allow user to request a new verification email
+
+3. **Email Not Verified**
+   - Check `user.emailVerified` in session
+   - Action: Show verification banner, allow resend
+
+## Best Practices
+
+1. **Store Email Temporarily**: After sign-up, store the email in session/localStorage to enable resend functionality
+
+2. **Auto-check Status**: Periodically check verification status if user is logged in but not verified
+
+3. **Clear Messaging**: Always inform users what action they need to take
+
+4. **Resend Limits**: Implement rate limiting on resend requests (backend may already handle this)
+
+5. **Redirect Handling**: Configure proper redirect URLs for verification success/failure
+
+## Testing
+
+### Test Sign Up Flow
+
+1. Sign up with a new email
+2. Check email inbox for verification email
+3. Click verification link
+4. Verify redirect to success page
+5. Check that `emailVerified` is now `true`
+
+### Test Resend Flow
+
+1. Sign up with email
+2. Don't verify immediately
+3. Click "Resend Verification Email"
+4. Check for new email
+5. Verify with new link
+
+## Troubleshooting
+
+### Verification Link Not Working
+
+- Check that `BETTER_AUTH_URL` is correctly set in backend
+- Verify CORS settings allow your frontend domain
+- Check that the token hasn't expired (default: 1 hour)
+
+### Email Not Received
+
+- Check spam folder
+- Verify `RESEND_API_KEY` is valid
+- Check Resend dashboard for delivery status
+- Verify `RESEND_FROM_EMAIL` is verified in Resend
+
+### Session Not Persisting
+
+- Ensure `credentials: 'include'` is set in fetch requests
+- Check cookie settings in browser
+- Verify CORS allows credentials
+
+## Example Integration (React/Next.js)
+
+```tsx
+// hooks/useAuth.ts
+export function useAuth() {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    checkSession()
+  }, [])
+
+  async function checkSession() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/get-session`, {
+        credentials: 'include',
+      })
+      const data = await res.json()
+      setUser(data.user)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { user, loading, checkSession }
+}
+
+// components/EmailVerificationBanner.tsx
+export function EmailVerificationBanner() {
+  const { user } = useAuth()
+
+  if (!user || user.emailVerified) return null
+
+  return (
+    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+      <p>Please verify your email address.</p>
+      <button onClick={resendVerification}>Resend Email</button>
+    </div>
+  )
+}
+```
+
+## Support
+
+For backend issues, check server logs. For email delivery issues, check Resend dashboard.

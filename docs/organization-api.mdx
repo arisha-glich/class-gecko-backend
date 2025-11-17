@@ -1,0 +1,415 @@
+# Organization Profile API
+
+This document provides comprehensive API documentation for the Organization endpoints in the Class Gecko backend.
+
+## Base URL
+
+All API endpoints are prefixed with the base URL:
+```
+http://localhost:8080
+```
+
+## Authentication
+
+All endpoints require authentication. The backend uses **cookie-based sessions** via Better Auth. Include session cookies in your requests.
+
+## Endpoints
+
+### GET `/organization`
+
+Retrieves the organization information for the currently authenticated user.
+
+#### Request
+
+No request body required. The organization is retrieved based on the authenticated user's session.
+
+**Headers:**
+- `Cookie: better-auth.session_token=YOUR_SESSION_TOKEN` (if using curl/Postman)
+- Cookies are automatically included in browser requests
+
+#### Successful Response (200 OK)
+
+```json
+{
+  "message": "Organization retrieved successfully",
+  "success": true,
+  "data": {
+    "organization": {
+      "id": 1,
+      "companyName": "Gecko Gymnastics",
+      "industry": "Sports & Recreation",
+      "language": "en",
+      "currency": "USD",
+      "timeZone": "UTC",
+      "websiteTheme": "default",
+      "timeFormat": "24h",
+      "startDateForWeeklyCalendar": "2025-01-01T00:00:00Z",
+      "ageCutoffDate": "2025-01-01T00:00:00Z",
+      "logo": null
+    }
+  }
+}
+```
+
+**Note:** If the user doesn't have an organization yet, `organization` will be `null`.
+
+#### Response Fields
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `number` | Unique identifier for the organization. |
+| `companyName` | `string` | Display name of the organization (this is the organization name). |
+| `industry` | `string` | Industry classification label. |
+| `language` | `string` | Language code (e.g., "en"). |
+| `currency` | `string` | Currency code (e.g., "USD"). |
+| `timeZone` | `string` | Timezone identifier (e.g., "UTC"). |
+| `websiteTheme` | `string` | Website theme identifier. |
+| `timeFormat` | `string` | Time format (e.g., "24h" or "12h"). |
+| `startDateForWeeklyCalendar` | `string` | ISO datetime string for weekly calendar start date. |
+| `ageCutoffDate` | `string` | ISO datetime string for age cutoff date. |
+| `logo` | `string \| null` | URL to the organization logo, if available. |
+
+#### Error Responses
+
+- **401 Unauthorized** – Returned when there is no authenticated session.
+  ```json
+  {
+    "message": "Unauthorized"
+  }
+  ```
+
+- **500 Internal Server Error** – Returned for unexpected failures during retrieval.
+  ```json
+  {
+    "message": "Failed to fetch organization"
+  }
+  ```
+
+#### Example Usage
+
+**JavaScript/Fetch:**
+```javascript
+const response = await fetch('http://localhost:8080/organization', {
+  method: 'GET',
+  credentials: 'include', // Important: include cookies
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+const data = await response.json()
+console.log('Organization name:', data.data.organization?.companyName)
+```
+
+**cURL:**
+```bash
+curl -X GET http://localhost:8080/organization \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+**TypeScript/React:**
+```typescript
+async function getOrganization() {
+  try {
+    const response = await fetch('http://localhost:8080/organization', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch organization')
+    }
+
+    const data = await response.json()
+    return data.data.organization
+  } catch (error) {
+    console.error('Error fetching organization:', error)
+    throw error
+  }
+}
+
+// Usage
+const organization = await getOrganization()
+if (organization) {
+  console.log('Organization name:', organization.companyName)
+} else {
+  console.log('No organization found for this user')
+}
+```
+
+---
+
+### PATCH `/organization`
+
+Updates the signed-in organization's profile details. The request requires an authenticated session. On success, the user's `onboardingStage` is set to `organization-updated`.
+
+#### Request Body
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `phoneNo` | `string` | Yes | Primary phone number for the organization owner. |
+| `organizationName` | `string` | Yes | Display name of the organization (will be stored as `companyName`). |
+| `industry` | `string` | Yes | Industry classification label. |
+| `students` | `number` | Yes | Count of students associated with the organization (stored in `user.meta.students`). |
+
+#### Request Example
+
+```json
+{
+  "phoneNo": "+1-555-123-4567",
+  "organizationName": "Gecko Gymnastics",
+  "industry": "Sports & Recreation",
+  "students": 125
+}
+```
+
+#### Successful Response (200 OK)
+
+```json
+{
+  "message": "Organization profile updated successfully",
+  "success": true,
+  "data": {
+    "user": {
+      "id": "clzlz0l2d000108l7f1m9x9k3",
+      "phoneNo": "+1-555-123-4567",
+      "onboardingStage": "organization-updated",
+      "meta": {
+        "students": 125
+      }
+    },
+    "organization": {
+      "id": 42,
+      "companyName": "Gecko Gymnastics",
+      "industry": "Sports & Recreation"
+    }
+  }
+}
+```
+
+#### Response Fields
+
+**User Object:**
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `string` | User's unique identifier. |
+| `phoneNo` | `string` | Updated phone number. |
+| `onboardingStage` | `string` | Set to `"organization-updated"` on successful update. |
+| `meta` | `object` | User metadata, including `students` count. |
+
+**Organization Object:**
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `number` | Organization's unique identifier. |
+| `companyName` | `string` | Organization name (from `organizationName` in request). |
+| `industry` | `string` | Industry classification. |
+
+#### Error Responses
+
+- **401 Unauthorized** – Returned when there is no authenticated session.
+  ```json
+  {
+    "message": "Unauthorized"
+  }
+  ```
+
+- **404 Not Found** – Returned if the user record does not exist for the session.
+  ```json
+  {
+    "message": "User not found"
+  }
+  ```
+
+- **500 Internal Server Error** – Returned for unexpected failures during update.
+  ```json
+  {
+    "message": "Failed to update organization"
+  }
+  ```
+
+#### Example Usage
+
+**JavaScript/Fetch:**
+```javascript
+const response = await fetch('http://localhost:8080/organization', {
+  method: 'PATCH',
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    phoneNo: '+1-555-123-4567',
+    organizationName: 'Gecko Gymnastics',
+    industry: 'Sports & Recreation',
+    students: 125,
+  }),
+})
+
+const data = await response.json()
+console.log('Updated organization:', data.data.organization)
+```
+
+**TypeScript/React:**
+```typescript
+interface UpdateOrganizationData {
+  phoneNo: string
+  organizationName: string
+  industry: string
+  students: number
+}
+
+async function updateOrganization(data: UpdateOrganizationData) {
+  try {
+    const response = await fetch('http://localhost:8080/organization', {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Failed to update organization')
+    }
+
+    const result = await response.json()
+    return result.data
+  } catch (error) {
+    console.error('Error updating organization:', error)
+    throw error
+  }
+}
+
+// Usage
+const result = await updateOrganization({
+  phoneNo: '+1-555-123-4567',
+  organizationName: 'Gecko Gymnastics',
+  industry: 'Sports & Recreation',
+  students: 125,
+})
+
+console.log('Organization updated:', result.organization.companyName)
+```
+
+**cURL:**
+```bash
+curl -X PATCH http://localhost:8080/organization \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phoneNo": "+1-555-123-4567",
+    "organizationName": "Gecko Gymnastics",
+    "industry": "Sports & Recreation",
+    "students": 125
+  }'
+```
+
+## Notes
+
+1. **Organization Creation**: If an organization doesn't exist for the user, the PATCH endpoint will create one automatically with default values for fields not provided.
+
+2. **Default Values**: When creating an organization, the following defaults are used:
+   - `language`: `"en"`
+   - `currency`: `"USD"`
+   - `timeZone`: `"UTC"`
+   - `websiteTheme`: `"default"`
+   - `timeFormat`: `"24h"`
+   - `startDateForWeeklyCalendar`: Current date
+   - `ageCutoffDate`: Current date
+   - `logo`: `null`
+
+3. **Organization Name**: The `organizationName` field in the request is stored as `companyName` in the database and returned in the response.
+
+4. **Students Count**: The `students` field is stored in the user's `meta` object, not directly in the organization record.
+
+5. **Authentication**: All endpoints require an active session. Make sure to sign in first using `/api/auth/sign-in/email` before making requests to these endpoints.
+
+## Frontend Integration
+
+### React Hook Example
+
+```typescript
+import { useState, useEffect } from 'react'
+
+interface Organization {
+  id: number
+  companyName: string
+  industry: string
+  language: string
+  currency: string
+  timeZone: string
+  websiteTheme: string
+  timeFormat: string
+  startDateForWeeklyCalendar: string
+  ageCutoffDate: string
+  logo: string | null
+}
+
+export function useOrganization() {
+  const [organization, setOrganization] = useState<Organization | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchOrganization()
+  }, [])
+
+  async function fetchOrganization() {
+    try {
+      setLoading(true)
+      const response = await fetch('http://localhost:8080/organization', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch organization')
+      }
+
+      const data = await response.json()
+      setOrganization(data.data.organization)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error')
+      setOrganization(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return { organization, loading, error, refetch: fetchOrganization }
+}
+
+// Usage in component
+function OrganizationDisplay() {
+  const { organization, loading, error } = useOrganization()
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!organization) return <div>No organization found</div>
+
+  return (
+    <div>
+      <h1>{organization.companyName}</h1>
+      <p>Industry: {organization.industry}</p>
+      <p>Currency: {organization.currency}</p>
+      <p>Time Zone: {organization.timeZone}</p>
+    </div>
+  )
+}
+```
+
+## API Reference
+
+View the interactive API reference at:
+- **OpenAPI Reference**: `http://localhost:8080/reference`
+- **Auth API Reference**: `http://localhost:8080/api/auth/reference`

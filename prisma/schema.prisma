@@ -20,11 +20,759 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Key fixes applied:
+// 1. Added missing foreign key relations
+// 2. Fixed unique constraints for 1-to-1 relations
+// 3. Added onDelete cascade behaviors
+// 4. Fixed enum usage
+// 5. Normalized teacher into separate model
+
+// -----------------------------
+// ENUMS
+// -----------------------------
+
+enum Role {
+  FAMILY
+  STUDENT
+  MEMBER
+  BUSINESS
+  STAFF
+  ORGANIZATION_ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum SendType {
+  EMAIL
+  WHATSAPP
+}
+
+enum NotificationType {
+  SYSTEM
+  USER
+  PAYMENT
+  ALERT
+}
+
+enum ClassType {
+  ONGOING_CLASS
+  DROP_CLASS
+}
+
+enum DiscountCategory {
+  MULTIPLE_STUDENT
+  CLASS_BY_STUDENT
+  CLASS_BY_FAMILY
+}
+
+// -----------------------------
+// USER MODELS
+// -----------------------------
+
 model User {
-  id        String   @id @default(cuid())
+  id                     String                @id @default(cuid())
+  email                  String                @unique
+  password               String?               // Make optional since OAuth users won't have passwords
+  emailVerified          Boolean               @default(false)
+  image                  String?
+  role                   Role                  @default(FAMILY)
+  banned                 Boolean               @default(false)
+  banReason              String?
+  banExpiresAt           DateTime?
+  dob                    DateTime?
+  gender                 Gender?
+  sendInvitationOnSignup Boolean               @default(false)
+  phoneNo                String?
+  meta                   Json?
+  onboardingStage        String?
+  addressId              Int?                  @unique
+  address                Address?              @relation(fields: [addressId], references: [id])
+  name                   String?
+  contactInfo            ContactInfo[]
+  holidays               Holiday[]
+  waiversPolicies        WaiversPolicies[]
+  registrationFees       RegistrationFee[]
+  customFields           CustomField[]
+  messages               Message[]
+  notifications          Notification[]
+  userQueries            UserQueries[]
+  discounts              Discount[]
+  classBookings          ClassBooking[]
+  dropInBookings         DropInClassBooking[]
+  trials                 Trial[]
+  waitlists              Waitlist[]
+  terms                  Terms[]
+  payments               Payment[]
+  refunds                Refund[]
+  carts                  Cart[]
+  orders                 Order[]
+  business               BusinessOrganization?
+  camps                  Camp[]
+  familyAccount          Family?               @relation("FamilyAccount")
+  managedFamilies        Family[]              @relation("OrganizationFamilies")
+  dropInClasses          DropInClass[]
+  sessions               Session[]
+  accounts               Account[]
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+
+  @@map("user")
+}
+
+// -----------------------------
+// ADDRESS & CONTACT INFO
+// -----------------------------
+
+model Address {
+  id      Int    @id @default(autoincrement())
+  state   String
+  city    String
+  zipcode String
+  street  String
+  country String
+  user    User?
+}
+
+model ContactInfo {
+  id                      Int      @id @default(autoincrement())
+  userId                  String
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relation                String?
+  phoneNo                 String?
+  email                   String?
+  useInEmergency          Boolean  @default(false)
+  sendBillingInfo         Boolean  @default(false)
+  additionalCommunication Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+// -----------------------------
+// LOCATION
+// -----------------------------
+
+model Location {
+  id        Int      @id @default(autoincrement())
+  name      String
+  address   String
+  classes   Class[]
+  dropInClasses DropInClass[]
+  createdAt DateTime @default(now())
+}
+
+// -----------------------------
+// HOLIDAYS & POLICIES
+// -----------------------------
+
+model Holiday {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  isRecurring  Boolean  @default(false)
+  affectsClass Boolean  @default(false)
+  startDate    DateTime
+  endDate      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model WaiversPolicies {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  permission  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model RegistrationFee {
+  id              Int      @id @default(autoincrement())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  pricePerStudent Float
+  maxPerFamily    Float?
+  renewalType     String   // "Annual", "Monthly", "One-time", etc.
+  renewalDate     DateTime?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CustomField {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appliesTo   String   // "Families", "Students", "Classes", etc.
+  question    String
+  answerType  String   // "Short Text", "Long Text", "Number", "Date", "Select One", "Select Multiple", "Checkbox"
+  options     Json?    // For "Select One" and "Select Multiple" types
+  isRequired  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// -----------------------------
+// MESSAGES & NOTIFICATIONS
+// -----------------------------
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  message   String
+  sendTo    String
+  sendType  SendType
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id               Int              @id @default(autoincrement())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String
+  message          String
+  notificationType NotificationType
+  objectId         String
+  isRead           Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+}
+
+// -----------------------------
+// USER QUERIES
+// -----------------------------
+
+model UserQueries {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  email     String
+  subject   String
+  createdAt DateTime @default(now())
+}
+
+// -----------------------------
+// DISCOUNT
+// -----------------------------
+
+model Discount {
+  id                   Int          @id @default(autoincrement())
+  title                String
+  description          String?
+  discountType         DiscountType
+  discountValue        Float
+  appliesTo            String
+  applicableClassIds   Json?
+  applicableClassTypes Json?
+  minEnrollmentCount   Int?
+  siblingConfig        Json?
+  validFrom            DateTime
+  validUntil           DateTime
+  maxUsesTotal         Int?
+  maxUsesPerFamily     Int?
+  timesUsed            Int          @default(0)
+  isActive             Boolean      @default(true)
+  userId               String?
+  user                 User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  category             DiscountCategory?
+  tiers                DiscountTier[]
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+}
+
+model DiscountTier {
+  id               Int       @id @default(autoincrement())
+  discountId       Int
+  discount         Discount  @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  studentsPerFamily Int?
+  classesPerStudent Int?
+  percentageOff    Float
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+// -----------------------------
+// TEACHER MODEL (NORMALIZED)
+// -----------------------------
+
+model Teacher {
+  id        Int      @id @default(autoincrement())
+  firstName String
+  lastName  String
   email     String   @unique
-  name      String?
-  password  String
+  phoneNo   String?
+  bio       String?
+  classes   Class[]
+  dropInClasses DropInClass[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// -----------------------------
+// CLASSES, LESSONS & CAMPS
+// -----------------------------
+
+model Class {
+  id                  Int            @id @default(autoincrement())
+  title               String
+  description         String?
+  startDate           DateTime
+  endDate             DateTime
+  frequency           Frequency
+  recurringDay        String?        // Day of week (Monday, Tuesday, etc.)
+  startTimeOfClass    String
+  endTimeOfClass      String?        // End time for the class
+  duration            Int
+  pricingPerLesson    Float
+  classImage          String?
+  locationId          Int?
+  location            Location?      @relation(fields: [locationId], references: [id])
+  teacherId           Int?
+  teacher             Teacher?       @relation(fields: [teacherId], references: [id])
+  minimumAge          Int?
+  maximumAge          Int?
+  classColor          String?
+  limitCapacity       Boolean        @default(false) // Toggle for capacity limit
+  capacity            Int?           // Actual capacity number when limitCapacity is true
+  allowPortalBooking  Boolean        @default(true)
+  familyPortalTrial   Boolean        @default(false)
+  globalClassDiscount Boolean        @default(false)
+  siblingDiscount     Boolean        @default(false)
+  classType           ClassType      @default(ONGOING_CLASS)
+  termId              Int?           // Link to term/season
+  term                Terms?         @relation(fields: [termId], references: [id])
+  lessons             Lesson[]
+  classBookings       ClassBooking[]
+  trials              Trial[]
+  waitlists           Waitlist[]
+  carts               Cart[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model Lesson {
+  id           Int      @id @default(autoincrement())
+  classId      Int
+  class        Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  title        String
+  isTrial      Boolean  @default(false)
+  status       String
+  attendanceId String?
+  notes        String?
+  date         DateTime
+  startTime    String
+  endTime      String?  // End time for the lesson
+  duration     Int
+  trials       Trial[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Camp {
+  id                               Int      @id @default(autoincrement())
+  userId                           String
+  user                             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title                            String
+  startDate                        DateTime
+  endDate                          DateTime?
+  allowParentsToBookIndividualDays Boolean  @default(false)
+  allowParentsToBookHalfDaySession Boolean  @default(false)
+  offerEarlyDropoff                Boolean  @default(false)
+  offerLatePickup                  Boolean  @default(false)
+  createdAt                        DateTime @default(now())
+  updatedAt                        DateTime @updatedAt
+}
+
+model DropInClass {
+  id                  Int                  @id @default(autoincrement())
+  userId              String
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title               String
+  description         String?
+  startDate           DateTime
+  endDate             DateTime
+  frequency           Frequency
+  recurringDay        String?
+  startTimeOfClass    String
+  endTimeOfClass      String?
+  duration            Int
+  pricingPerLesson    Float
+  classImage          String?
+  locationId          Int?
+  location            Location?             @relation(fields: [locationId], references: [id])
+  teacherId           Int?
+  teacher             Teacher?              @relation(fields: [teacherId], references: [id])
+  minimumAge          Int?
+  maximumAge          Int?
+  classColor          String?
+  limitCapacity       Boolean               @default(false)
+  capacity            Int?
+  allowPortalBooking  Boolean               @default(true)
+  familyPortalTrial   Boolean               @default(false)
+  globalClassDiscount Boolean               @default(false)
+  siblingDiscount     Boolean               @default(false)
+  classType           ClassType             @default(DROP_CLASS)
+  bookings            DropInClassBooking[]
+  lessons             DropInLesson[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+}
+
+// -----------------------------
+// TERMS
+// -----------------------------
+
+model Terms {
+  id                Int            @id @default(autoincrement())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billingId         Int?
+  title             String
+  start             Boolean        @default(false)
+  end               Boolean        @default(false)
+  startDate         DateTime
+  endDate           DateTime
+  registrationFee   Boolean        @default(false)
+  seasonSpecificFee Boolean        @default(false)
+  pricingType       String?        // By Lesson, By Month, By Season, Number of Classes, Number of Hours
+  paymentOptions    Json           // Array of payment options (Upfront, Monthly, Weekly, etc.)
+  pricing           Json
+  seasonSpecificFees Json?         // Array of season-specific fees
+  classBookings     ClassBooking[]
+  waitlists         Waitlist[]
+  trials            Trial[]
+  classes           Class[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+// -----------------------------
+// STUDENT
+// -----------------------------
+
+model Student {
+  id                Int                 @id @default(autoincrement())
+  familyId          Int?
+  family            Family?             @relation(fields: [familyId], references: [id])
+  firstName         String
+  lastName          String
+  dateOfBirth       DateTime?
+  gender            String?
+  medicalInfo       String?
+  photoVideoConsent Boolean             @default(false)
+  height            Float?
+  neck              Float?
+  girth             Float?
+  chest             Float?
+  braSize           String?
+  waist             Float?
+  hips              Float?
+  inseam            Float?
+  shoeSize          String?
+  tshirtSize        String?
+  meta              Json?
+  classBookings     ClassBooking[]
+  dropInBookings    DropInClassBooking[]
+  trials            Trial[]
+  waitlists         Waitlist[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+// -----------------------------
+// FAMILY MODEL (NORMALIZED)
+// -----------------------------
+
+model Family {
+  id                          Int       @id @default(autoincrement())
+  organizationId              String
+  organization                User      @relation("OrganizationFamilies", fields: [organizationId], references: [id], onDelete: Cascade)
+  userId                      String    @unique
+  account                     User      @relation("FamilyAccount", fields: [userId], references: [id], onDelete: Cascade)
+  familyName                  String
+  primaryParentFirstName      String
+  primaryParentLastName       String
+  primaryParentEmail          String
+  primaryParentPhoneCountry   String?
+  primaryParentPhoneNumber    String?
+  sendPortalInvitation        Boolean   @default(false)
+  invitationSentAt            DateTime?
+  status                      String?   @default("ACTIVE")
+  notes                       String?
+  students                    Student[]
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
+}
+
+// -----------------------------
+// BUSINESS / ORGANIZATION & COMMISSION
+// -----------------------------
+
+model BusinessOrganization {
+  id                         Int          @id @default(autoincrement())
+  userId                     String       @unique
+  user                       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName                String
+  industry                   String
+  language                   String
+  currency                   String
+  timeZone                   String
+  websiteTheme               String
+  timeFormat                 String
+  startDateForWeeklyCalendar DateTime
+  ageCutoffDate              DateTime
+  logo                       String?
+  commissions                Commission[]
+}
+
+model Commission {
+  id            Int                  @id @default(autoincrement())
+  businessId    Int
+  business      BusinessOrganization @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  effectiveFrom DateTime
+
+  // Country & Currency
+  country  String // ISO country code (US, CA, GB, IN)
+  currency String // ISO currency (USD, CAD, GBP, INR)
+
+  // Commission Calculation
+  commissionType  CommissionType // enum: PERCENTAGE, FIXED, TIERED
+  commissionValue Float // Base rate
+  tierConfig      Json? // For tiered commissions
+
+  // Platform Fees
+  platformCommission Float // Calculated commission %
+  platformAmount     Float // Calculated commission amount
+
+  // Application Rules
+  appliesTo         String // ALL, ONGOING_CLASSES, DROP_CLASSES, CAMPS, TRIALS
+  minTransactionAmt Float? // Minimum booking amount
+  maxTransactionAmt Float? // Maximum booking amount
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([businessId, country, effectiveFrom])
+  @@index([country, isActive, effectiveFrom])
+}
+
+enum CommissionType {
+  PERCENTAGE
+  FIXED
+  TIERED
+}
+
+// -----------------------------
+// CART / ORDER / PAYMENT / REFUND
+// -----------------------------
+
+model Cart {
+  id           Int     @id @default(autoincrement())
+  classId      Int?
+  class        Class?  @relation(fields: [classId], references: [id])
+  userId       String
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productTitle String
+  description  String?
+  amount       Float
+  status       String
+  order        Order?
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  cartId    Int      @unique
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  status    String
+  paymentId Int?     @unique
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingId     Int?          @unique
+  booking       ClassBooking? @relation(fields: [bookingId], references: [id])
+  paymentMethod String
+  transactionId String?
+  refundId      Int?          @unique
+  refund        Refund?       @relation(fields: [refundId], references: [id])
+  order         Order?
+  createdAt     DateTime      @default(now())
+}
+
+model Refund {
+  id           Int           @id @default(autoincrement())
+  refundAmount Float
+  reason       String
+  status       String
+  bookingId    Int?          @unique
+  booking      ClassBooking? @relation(fields: [bookingId], references: [id])
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  payment      Payment?
+  createdAt    DateTime      @default(now())
+}
+
+// -----------------------------
+// CLASS BOOKINGS / WAITLIST / TRIAL
+// -----------------------------
+
+model ClassBooking {
+  id                 Int      @id @default(autoincrement())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  termId             Int?
+  term               Terms?   @relation(fields: [termId], references: [id])
+  classId            Int
+  class              Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  studentId          Int?     // Link to Student
+  student            Student? @relation(fields: [studentId], references: [id])
+  enrollmentStartDate DateTime? // Start date for enrollment
+  enrollmentEndDate   DateTime? // End date for enrollment
+  paymentOption      String?  // Payment option selected (Weekly, Monthly, etc.)
+  paymentId          Int?
+  payment            Payment?
+  refund             Refund?
+  status             String?  // Active, Cancelled, Completed, etc.
+  date               DateTime @default(now())
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Waitlist {
+  id        Int      @id @default(autoincrement())
+  termId    Int?
+  term      Terms?   @relation(fields: [termId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId Int?     // Link to Student
+  student   Student? @relation(fields: [studentId], references: [id])
+  classId   Int?     // Optional link to specific class
+  class     Class?   @relation(fields: [classId], references: [id])
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Trial {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId Int?     // Link to Student
+  student   Student? @relation(fields: [studentId], references: [id])
+  classId   Int
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  termId    Int?
+  term      Terms?   @relation(fields: [termId], references: [id])
+  lessonId  Int?     // Link to specific lesson
+  lesson    Lesson?  @relation(fields: [lessonId], references: [id])
+  date      DateTime? // Trial date
+  status    String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DropInClassBooking {
+  id                 Int          @id @default(autoincrement())
+  userId             String
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dropInClassId      Int
+  dropInClass        DropInClass  @relation(fields: [dropInClassId], references: [id], onDelete: Cascade)
+  studentId          Int?         // Link to Student
+  student            Student?     @relation(fields: [studentId], references: [id])
+  enrollmentDate     DateTime?    // Date when student enrolled
+  paymentOption      String?      // Payment option selected
+  status             String?      // Active, Cancelled, Completed, etc.
+  date               DateTime     @default(now())
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model DropInLesson {
+  id           Int         @id @default(autoincrement())
+  dropInClassId Int
+  dropInClass  DropInClass @relation(fields: [dropInClassId], references: [id], onDelete: Cascade)
+  title        String
+  status       String
+  notes        String?
+  date         DateTime
+  startTime    String
+  endTime      String?    // End time for the lesson
+  duration     Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@map("session")
+}
+
+model Account {
+  id                    String   @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@map("verification")
 }

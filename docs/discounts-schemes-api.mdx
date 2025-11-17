@@ -1,0 +1,715 @@
+# Discount Schemes API
+
+This document explains how frontend developers can integrate with the discount schemes endpoints. Discount schemes allow you to create flexible discount rules with tiered pricing based on multiple students, classes per student, or classes per family.
+
+## Base URL
+
+```
+http://localhost:8080
+```
+
+All endpoints require an authenticated organization session (Better Auth cookie `better-auth.session_token`). In fetch requests, use `credentials: 'include'`.
+
+---
+
+## Data Model
+
+### Discount Object
+
+```json
+{
+  "id": 5,
+  "title": "Multiple Student Discount",
+  "description": "Apply a discount to families with multiple students.",
+  "discountType": "PERCENTAGE",
+  "discountValue": 10.0,
+  "appliesTo": "TUITION",
+  "applicableClassIds": [1, 2, 3],
+  "applicableClassTypes": ["ONGOING_CLASS", "DROP_CLASS"],
+  "minEnrollmentCount": 2,
+  "siblingConfig": {
+    "requireSameFamily": true
+  },
+  "validFrom": "2025-01-01T00:00:00.000Z",
+  "validUntil": "2025-12-31T23:59:59.000Z",
+  "maxUsesTotal": 100,
+  "maxUsesPerFamily": 1,
+  "timesUsed": 0,
+  "isActive": true,
+  "category": "MULTIPLE_STUDENT",
+  "tiers": [
+    {
+      "id": 1,
+      "studentsPerFamily": 1,
+      "classesPerStudent": null,
+      "percentageOff": 5.0,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "studentsPerFamily": 2,
+      "classesPerStudent": null,
+      "percentageOff": 7.5,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+### Discount Tier Object
+
+```json
+{
+  "id": 1,
+  "studentsPerFamily": 2,
+  "classesPerStudent": null,
+  "percentageOff": 10.0,
+  "createdAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2025-01-01T00:00:00.000Z"
+}
+```
+
+---
+
+## Discount Categories
+
+### MULTIPLE_STUDENT
+Discounts based on the number of students in a family. Use `studentsPerFamily` in tiers.
+
+**Example:** 5% off for 1 student, 10% off for 2+ students.
+
+### CLASS_BY_STUDENT
+Discounts based on the number of classes a student enrolls in. Use `classesPerStudent` in tiers.
+
+**Example:** 5% off for 2 classes, 10% off for 3+ classes.
+
+### CLASS_BY_FAMILY
+Discounts based on the total number of classes across all students in a family. Use `classesPerStudent` or custom logic in tiers.
+
+**Example:** 10% off when family enrolls in 5+ total classes.
+
+---
+
+## Discount Types
+
+### PERCENTAGE
+Percentage-based discount. The `discountValue` represents the base percentage, but tier-specific percentages in `tiers` override this.
+
+### FIXED
+Fixed amount discount. The `discountValue` represents the fixed discount amount in the organization's currency.
+
+---
+
+## Endpoints
+
+### Create Discount
+
+Create a new discount scheme with optional tiers.
+
+**Endpoint:** `POST /discounts`
+
+**Request Body:**
+```json
+{
+  "title": "Multiple Student Discount",
+  "description": "Apply a discount to families with multiple students.",
+  "discountType": "PERCENTAGE",
+  "discountValue": 0,
+  "appliesTo": "TUITION",
+  "applicableClassIds": [1, 2, 3],
+  "applicableClassTypes": ["ONGOING_CLASS"],
+  "minEnrollmentCount": 2,
+  "siblingConfig": {
+    "requireSameFamily": true
+  },
+  "validFrom": "2025-01-01T00:00:00.000Z",
+  "validUntil": "2025-12-31T23:59:59.000Z",
+  "maxUsesTotal": 100,
+  "maxUsesPerFamily": 1,
+  "isActive": true,
+  "category": "MULTIPLE_STUDENT",
+  "tiers": [
+    {
+      "studentsPerFamily": 1,
+      "percentageOff": 5.0
+    },
+    {
+      "studentsPerFamily": 2,
+      "percentageOff": 7.5
+    },
+    {
+      "studentsPerFamily": 3,
+      "percentageOff": 10.0
+    }
+  ]
+}
+```
+
+**Response:** `201 Created`
+```json
+{
+  "message": "Discount created successfully",
+  "success": true,
+  "data": {
+    "id": 5,
+    "title": "Multiple Student Discount",
+    "description": "Apply a discount to families with multiple students.",
+    "discountType": "PERCENTAGE",
+    "discountValue": 0,
+    "appliesTo": "TUITION",
+    "applicableClassIds": [1, 2, 3],
+    "applicableClassTypes": ["ONGOING_CLASS"],
+    "minEnrollmentCount": 2,
+    "siblingConfig": {
+      "requireSameFamily": true
+    },
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": "2025-12-31T23:59:59.000Z",
+    "maxUsesTotal": 100,
+    "maxUsesPerFamily": 1,
+    "timesUsed": 0,
+    "isActive": true,
+    "category": "MULTIPLE_STUDENT",
+    "tiers": [
+      {
+        "id": 1,
+        "studentsPerFamily": 1,
+        "classesPerStudent": null,
+        "percentageOff": 5.0,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-01T00:00:00.000Z"
+      },
+      {
+        "id": 2,
+        "studentsPerFamily": 2,
+        "classesPerStudent": null,
+        "percentageOff": 7.5,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-01T00:00:00.000Z"
+      },
+      {
+        "id": 3,
+        "studentsPerFamily": 3,
+        "classesPerStudent": null,
+        "percentageOff": 10.0,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-01T00:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('http://localhost:8080/discounts', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    title: 'Multiple Student Discount',
+    description: 'Apply a discount to families with multiple students.',
+    discountType: 'PERCENTAGE',
+    discountValue: 0,
+    appliesTo: 'TUITION',
+    validFrom: '2025-01-01T00:00:00.000Z',
+    validUntil: '2025-12-31T23:59:59.000Z',
+    category: 'MULTIPLE_STUDENT',
+    isActive: true,
+    tiers: [
+      { studentsPerFamily: 1, percentageOff: 5.0 },
+      { studentsPerFamily: 2, percentageOff: 7.5 },
+      { studentsPerFamily: 3, percentageOff: 10.0 },
+    ],
+  }),
+})
+
+const data = await response.json()
+```
+
+---
+
+### Get All Discounts
+
+Retrieve all discount schemes for the authenticated organization.
+
+**Endpoint:** `GET /discounts`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Discounts retrieved successfully",
+  "success": true,
+  "data": [
+    {
+      "id": 5,
+      "title": "Multiple Student Discount",
+      "description": "Apply a discount to families with multiple students.",
+      "discountType": "PERCENTAGE",
+      "discountValue": 0,
+      "appliesTo": "TUITION",
+      "validFrom": "2025-01-01T00:00:00.000Z",
+      "validUntil": "2025-12-31T23:59:59.000Z",
+      "isActive": true,
+      "category": "MULTIPLE_STUDENT",
+      "tiers": [
+        {
+          "id": 1,
+          "studentsPerFamily": 1,
+          "percentageOff": 5.0
+        },
+        {
+          "id": 2,
+          "studentsPerFamily": 2,
+          "percentageOff": 7.5
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### Get Discount by ID
+
+Retrieve a specific discount scheme.
+
+**Endpoint:** `GET /discounts/{id}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Discount retrieved successfully",
+  "success": true,
+  "data": {
+    "id": 5,
+    "title": "Multiple Student Discount",
+    "description": "Apply a discount to families with multiple students.",
+    "discountType": "PERCENTAGE",
+    "discountValue": 0,
+    "appliesTo": "TUITION",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": "2025-12-31T23:59:59.000Z",
+    "isActive": true,
+    "category": "MULTIPLE_STUDENT",
+    "tiers": [
+      {
+        "id": 1,
+        "studentsPerFamily": 1,
+        "percentageOff": 5.0
+      }
+    ]
+  }
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Discount not found"
+}
+```
+
+---
+
+### Update Discount
+
+Update an existing discount scheme. **Note:** If you provide `tiers`, the entire tier list will be replaced with the new array.
+
+**Endpoint:** `PATCH /discounts/{id}`
+
+**Request Body:** (All fields optional)
+```json
+{
+  "title": "Updated Multiple Student Discount",
+  "isActive": false,
+  "tiers": [
+    {
+      "studentsPerFamily": 1,
+      "percentageOff": 5.0
+    },
+    {
+      "studentsPerFamily": 2,
+      "percentageOff": 10.0
+    },
+    {
+      "studentsPerFamily": 3,
+      "percentageOff": 15.0
+    }
+  ]
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Discount updated successfully",
+  "success": true,
+  "data": {
+    "id": 5,
+    "title": "Updated Multiple Student Discount",
+    "isActive": false,
+    "tiers": [
+      {
+        "id": 4,
+        "studentsPerFamily": 1,
+        "percentageOff": 5.0
+      },
+      {
+        "id": 5,
+        "studentsPerFamily": 2,
+        "percentageOff": 10.0
+      },
+      {
+        "id": 6,
+        "studentsPerFamily": 3,
+        "percentageOff": 15.0
+      }
+    ]
+  }
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Discount not found"
+}
+```
+
+**Important:** When updating tiers, send the complete tier array. The backend will delete all existing tiers and create new ones.
+
+---
+
+### Delete Discount
+
+Remove a discount scheme.
+
+**Endpoint:** `DELETE /discounts/{id}`
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Discount deleted successfully",
+  "success": true
+}
+```
+
+**Error Response:** `404 Not Found`
+```json
+{
+  "message": "Discount not found"
+}
+```
+
+---
+
+## Discount Tier Examples
+
+### Multiple Student Discount
+
+For discounts based on the number of students in a family:
+
+```json
+{
+  "title": "Multiple Student Discount",
+  "category": "MULTIPLE_STUDENT",
+  "discountType": "PERCENTAGE",
+  "discountValue": 0,
+  "appliesTo": "TUITION",
+  "validFrom": "2025-01-01T00:00:00.000Z",
+  "validUntil": "2025-12-31T23:59:59.000Z",
+  "tiers": [
+    {
+      "studentsPerFamily": 1,
+      "percentageOff": 5.0
+    },
+    {
+      "studentsPerFamily": 2,
+      "percentageOff": 10.0
+    },
+    {
+      "studentsPerFamily": 3,
+      "percentageOff": 15.0
+    }
+  ]
+}
+```
+
+### Class by Student Discount
+
+For discounts based on the number of classes a student enrolls in:
+
+```json
+{
+  "title": "Multi-Class Discount",
+  "category": "CLASS_BY_STUDENT",
+  "discountType": "PERCENTAGE",
+  "discountValue": 0,
+  "appliesTo": "TUITION",
+  "validFrom": "2025-01-01T00:00:00.000Z",
+  "validUntil": "2025-12-31T23:59:59.000Z",
+  "tiers": [
+    {
+      "classesPerStudent": 2,
+      "percentageOff": 5.0
+    },
+    {
+      "classesPerStudent": 3,
+      "percentageOff": 10.0
+    },
+    {
+      "classesPerStudent": 4,
+      "percentageOff": 15.0
+    }
+  ]
+}
+```
+
+### Class by Family Discount
+
+For discounts based on total classes across all family members:
+
+```json
+{
+  "title": "Family Multi-Class Discount",
+  "category": "CLASS_BY_FAMILY",
+  "discountType": "PERCENTAGE",
+  "discountValue": 0,
+  "appliesTo": "TUITION",
+  "validFrom": "2025-01-01T00:00:00.000Z",
+  "validUntil": "2025-12-31T23:59:59.000Z",
+  "tiers": [
+    {
+      "classesPerStudent": 5,
+      "percentageOff": 10.0
+    },
+    {
+      "classesPerStudent": 10,
+      "percentageOff": 20.0
+    }
+  ]
+}
+```
+
+---
+
+## Field Descriptions
+
+### Core Fields
+
+- **`title`** (string, required): Name of the discount scheme
+- **`description`** (string, optional): Description of the discount
+- **`discountType`** (enum, required): `PERCENTAGE` or `FIXED`
+- **`discountValue`** (number, required): Base discount value (percentage or fixed amount)
+- **`appliesTo`** (string, required): What the discount applies to (e.g., `TUITION`, `REGISTRATION_FEE`)
+- **`category`** (enum, optional): `MULTIPLE_STUDENT`, `CLASS_BY_STUDENT`, or `CLASS_BY_FAMILY`
+- **`isActive`** (boolean, optional): Whether the discount is active (defaults to `true`)
+
+### Applicability Fields
+
+- **`applicableClassIds`** (array, optional): Specific class IDs the discount applies to
+- **`applicableClassTypes`** (array, optional): Class types the discount applies to (e.g., `["ONGOING_CLASS", "DROP_CLASS"]`)
+- **`minEnrollmentCount`** (number, optional): Minimum number of enrollments required
+- **`siblingConfig`** (object, optional): Configuration for sibling-specific discounts
+
+### Validity Fields
+
+- **`validFrom`** (string, required): ISO datetime when discount becomes valid
+- **`validUntil`** (string, required): ISO datetime when discount expires
+
+### Usage Limits
+
+- **`maxUsesTotal`** (number, optional): Maximum total uses across all families
+- **`maxUsesPerFamily`** (number, optional): Maximum uses per family
+- **`timesUsed`** (number, read-only): Current usage count (automatically tracked)
+
+### Tier Fields
+
+Each tier object can have:
+- **`studentsPerFamily`** (number, optional): Number of students in family (for `MULTIPLE_STUDENT` category)
+- **`classesPerStudent`** (number, optional): Number of classes per student (for `CLASS_BY_STUDENT` or `CLASS_BY_FAMILY`)
+- **`percentageOff`** (number, required): Percentage discount for this tier
+
+---
+
+## Error Responses
+
+All endpoints may return the following error responses:
+
+- **401 Unauthorized**: Authentication required
+  ```json
+  {
+    "message": "Unauthorized"
+  }
+  ```
+
+- **404 Not Found**: Resource not found
+  ```json
+  {
+    "message": "Discount not found"
+  }
+  ```
+
+- **500 Internal Server Error**: Server error
+  ```json
+  {
+    "message": "Failed to perform operation"
+  }
+  ```
+
+---
+
+## Integration Notes
+
+1. **Authentication**: All endpoints require authentication. Ensure cookies are included in requests (`credentials: 'include'` in fetch).
+
+2. **Tier Management**: When updating discounts, if you provide `tiers`, the entire tier list is replaced. Always send the complete tier array.
+
+3. **Category Selection**: Choose the appropriate category based on your discount logic:
+   - Use `MULTIPLE_STUDENT` for family-based student count discounts
+   - Use `CLASS_BY_STUDENT` for per-student class count discounts
+   - Use `CLASS_BY_FAMILY` for family-wide class count discounts
+
+4. **Tier Fields**:
+   - For `MULTIPLE_STUDENT`: Use `studentsPerFamily` in tiers
+   - For `CLASS_BY_STUDENT` or `CLASS_BY_FAMILY`: Use `classesPerStudent` in tiers
+   - Only one of `studentsPerFamily` or `classesPerStudent` should be set per tier
+
+5. **Date Formats**: All dates should be in ISO 8601 format (e.g., `2025-01-01T00:00:00.000Z`).
+
+6. **JSON Fields**: Fields like `applicableClassIds`, `applicableClassTypes`, and `siblingConfig` are stored as JSON. Send them as arrays or objects.
+
+7. **Discount Value**: For tiered discounts, `discountValue` can be `0` if all logic is handled by tiers. For non-tiered discounts, set the actual discount value here.
+
+---
+
+## Complete Workflow Example
+
+Here's a complete example of creating and managing a discount scheme:
+
+```typescript
+// 1. Create a multiple student discount
+const createResponse = await fetch('http://localhost:8080/discounts', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    title: 'Multiple Student Discount',
+    description: 'Discount for families with multiple students',
+    category: 'MULTIPLE_STUDENT',
+    discountType: 'PERCENTAGE',
+    discountValue: 0,
+    appliesTo: 'TUITION',
+    validFrom: '2025-01-01T00:00:00.000Z',
+    validUntil: '2025-12-31T23:59:59.000Z',
+    isActive: true,
+    tiers: [
+      { studentsPerFamily: 1, percentageOff: 5.0 },
+      { studentsPerFamily: 2, percentageOff: 10.0 },
+      { studentsPerFamily: 3, percentageOff: 15.0 },
+    ],
+  }),
+})
+const discount = await createResponse.json()
+const discountId = discount.data.id
+
+// 2. Get all discounts
+const listResponse = await fetch('http://localhost:8080/discounts', {
+  method: 'GET',
+  credentials: 'include',
+})
+const discounts = await listResponse.json()
+
+// 3. Update discount (replace tiers)
+const updateResponse = await fetch(`http://localhost:8080/discounts/${discountId}`, {
+  method: 'PATCH',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    tiers: [
+      { studentsPerFamily: 1, percentageOff: 5.0 },
+      { studentsPerFamily: 2, percentageOff: 12.0 },
+      { studentsPerFamily: 3, percentageOff: 18.0 },
+      { studentsPerFamily: 4, percentageOff: 20.0 },
+    ],
+  }),
+})
+const updatedDiscount = await updateResponse.json()
+
+// 4. Deactivate discount
+const deactivateResponse = await fetch(`http://localhost:8080/discounts/${discountId}`, {
+  method: 'PATCH',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    isActive: false,
+  }),
+})
+
+// 5. Delete discount
+const deleteResponse = await fetch(`http://localhost:8080/discounts/${discountId}`, {
+  method: 'DELETE',
+  credentials: 'include',
+})
+```
+
+---
+
+## Testing with cURL
+
+### Create Discount
+
+```bash
+curl -X POST http://localhost:8080/discounts \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Multiple Student Discount",
+    "category": "MULTIPLE_STUDENT",
+    "discountType": "PERCENTAGE",
+    "discountValue": 0,
+    "appliesTo": "TUITION",
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validUntil": "2025-12-31T23:59:59.000Z",
+    "tiers": [
+      { "studentsPerFamily": 1, "percentageOff": 5.0 },
+      { "studentsPerFamily": 2, "percentageOff": 10.0 }
+    ]
+  }'
+```
+
+### Update Discount Tiers
+
+```bash
+curl -X PATCH http://localhost:8080/discounts/5 \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tiers": [
+      { "studentsPerFamily": 1, "percentageOff": 5.0 },
+      { "studentsPerFamily": 2, "percentageOff": 12.0 },
+      { "studentsPerFamily": 3, "percentageOff": 18.0 }
+    ]
+  }'
+```
+
+### Get All Discounts
+
+```bash
+curl -X GET http://localhost:8080/discounts \
+  -H "Cookie: better-auth.session_token=YOUR_SESSION_TOKEN"
+```
+
+---
+
+## Related Documentation
+
+- [Frontend Integration Guide](./frontend-integration.md) - General API documentation
+- [Discounts API](./discounts-api.md) - Alternative documentation format
+
