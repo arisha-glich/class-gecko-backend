@@ -37,7 +37,7 @@ enum Role {
   MEMBER
   BUSINESS
   STAFF
-  ORGANIZATION_ADMIN
+  ADMIN
 }
 
 enum Gender {
@@ -544,6 +544,8 @@ model BusinessOrganization {
   ageCutoffDate              DateTime
   logo                       String?
   commissions                Commission[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Commission {

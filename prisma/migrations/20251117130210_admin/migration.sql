@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "public"."Role" AS ENUM ('FAMILY', 'STUDENT', 'MEMBER', 'BUSINESS', 'STAFF');
+CREATE TYPE "public"."Role" AS ENUM ('FAMILY', 'STUDENT', 'MEMBER', 'BUSINESS', 'STAFF', 'ADMIN');
 
 -- CreateEnum
 CREATE TYPE "public"."Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER');
@@ -20,15 +20,16 @@ CREATE TYPE "public"."NotificationType" AS ENUM ('SYSTEM', 'USER', 'PAYMENT', 'A
 CREATE TYPE "public"."ClassType" AS ENUM ('ONGOING_CLASS', 'DROP_CLASS');
 
 -- CreateEnum
+CREATE TYPE "public"."DiscountCategory" AS ENUM ('MULTIPLE_STUDENT', 'CLASS_BY_STUDENT', 'CLASS_BY_FAMILY');
+
+-- CreateEnum
 CREATE TYPE "public"."CommissionType" AS ENUM ('PERCENTAGE', 'FIXED', 'TIERED');
 
 -- CreateTable
 CREATE TABLE "public"."user" (
-    "id" SERIAL NOT NULL,
-    "firstName" TEXT NOT NULL,
-    "lastName" TEXT,
+    "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
     "image" TEXT,
     "role" "public"."Role" NOT NULL DEFAULT 'FAMILY',
@@ -42,9 +43,9 @@ CREATE TABLE "public"."user" (
     "meta" JSONB,
     "onboardingStage" TEXT,
     "addressId" INTEGER,
+    "name" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "name" TEXT NOT NULL,
 
     CONSTRAINT "user_pkey" PRIMARY KEY ("id")
 );
@@ -64,7 +65,7 @@ CREATE TABLE "public"."Address" (
 -- CreateTable
 CREATE TABLE "public"."ContactInfo" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "relation" TEXT,
     "phoneNo" TEXT,
     "email" TEXT,
@@ -90,12 +91,14 @@ CREATE TABLE "public"."Location" (
 -- CreateTable
 CREATE TABLE "public"."Holiday" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "isRecurring" BOOLEAN NOT NULL DEFAULT false,
     "affectsClass" BOOLEAN NOT NULL DEFAULT false,
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Holiday_pkey" PRIMARY KEY ("id")
 );
@@ -103,17 +106,52 @@ CREATE TABLE "public"."Holiday" (
 -- CreateTable
 CREATE TABLE "public"."WaiversPolicies" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "permission" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "WaiversPolicies_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
+CREATE TABLE "public"."RegistrationFee" (
+    "id" SERIAL NOT NULL,
+    "userId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "pricePerStudent" DOUBLE PRECISION NOT NULL,
+    "maxPerFamily" DOUBLE PRECISION,
+    "renewalType" TEXT NOT NULL,
+    "renewalDate" TIMESTAMP(3),
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "RegistrationFee_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."CustomField" (
+    "id" SERIAL NOT NULL,
+    "userId" TEXT NOT NULL,
+    "appliesTo" TEXT NOT NULL,
+    "question" TEXT NOT NULL,
+    "answerType" TEXT NOT NULL,
+    "options" JSONB,
+    "isRequired" BOOLEAN NOT NULL DEFAULT false,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CustomField_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "public"."Message" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
     "message" TEXT NOT NULL,
     "sendTo" TEXT NOT NULL,
@@ -126,7 +164,7 @@ CREATE TABLE "public"."Message" (
 -- CreateTable
 CREATE TABLE "public"."Notification" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "message" TEXT NOT NULL,
     "notificationType" "public"."NotificationType" NOT NULL,
@@ -140,7 +178,7 @@ CREATE TABLE "public"."Notification" (
 -- CreateTable
 CREATE TABLE "public"."UserQueries" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "subject" TEXT NOT NULL,
@@ -167,9 +205,25 @@ CREATE TABLE "public"."Discount" (
     "maxUsesPerFamily" INTEGER,
     "timesUsed" INTEGER NOT NULL DEFAULT 0,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "userId" INTEGER,
+    "userId" TEXT,
+    "category" "public"."DiscountCategory",
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Discount_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."DiscountTier" (
+    "id" SERIAL NOT NULL,
+    "discountId" INTEGER NOT NULL,
+    "studentsPerFamily" INTEGER,
+    "classesPerStudent" INTEGER,
+    "percentageOff" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DiscountTier_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -194,7 +248,9 @@ CREATE TABLE "public"."Class" (
     "startDate" TIMESTAMP(3) NOT NULL,
     "endDate" TIMESTAMP(3) NOT NULL,
     "frequency" "public"."Frequency" NOT NULL,
+    "recurringDay" TEXT,
     "startTimeOfClass" TEXT NOT NULL,
+    "endTimeOfClass" TEXT,
     "duration" INTEGER NOT NULL,
     "pricingPerLesson" DOUBLE PRECISION NOT NULL,
     "classImage" TEXT,
@@ -203,12 +259,16 @@ CREATE TABLE "public"."Class" (
     "minimumAge" INTEGER,
     "maximumAge" INTEGER,
     "classColor" TEXT,
-    "limitCapacity" INTEGER,
+    "limitCapacity" BOOLEAN NOT NULL DEFAULT false,
+    "capacity" INTEGER,
     "allowPortalBooking" BOOLEAN NOT NULL DEFAULT true,
     "familyPortalTrial" BOOLEAN NOT NULL DEFAULT false,
     "globalClassDiscount" BOOLEAN NOT NULL DEFAULT false,
     "siblingDiscount" BOOLEAN NOT NULL DEFAULT false,
     "classType" "public"."ClassType" NOT NULL DEFAULT 'ONGOING_CLASS',
+    "termId" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Class_pkey" PRIMARY KEY ("id")
 );
@@ -224,7 +284,10 @@ CREATE TABLE "public"."Lesson" (
     "notes" TEXT,
     "date" TIMESTAMP(3) NOT NULL,
     "startTime" TEXT NOT NULL,
+    "endTime" TEXT,
     "duration" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Lesson_pkey" PRIMARY KEY ("id")
 );
@@ -232,20 +295,57 @@ CREATE TABLE "public"."Lesson" (
 -- CreateTable
 CREATE TABLE "public"."Camp" (
     "id" SERIAL NOT NULL,
+    "userId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
     "startDate" TIMESTAMP(3) NOT NULL,
-    "endDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3),
     "allowParentsToBookIndividualDays" BOOLEAN NOT NULL DEFAULT false,
     "allowParentsToBookHalfDaySession" BOOLEAN NOT NULL DEFAULT false,
     "offerEarlyDropoff" BOOLEAN NOT NULL DEFAULT false,
     "offerLatePickup" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Camp_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
+CREATE TABLE "public"."DropInClass" (
+    "id" SERIAL NOT NULL,
+    "userId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "frequency" "public"."Frequency" NOT NULL,
+    "recurringDay" TEXT,
+    "startTimeOfClass" TEXT NOT NULL,
+    "endTimeOfClass" TEXT,
+    "duration" INTEGER NOT NULL,
+    "pricingPerLesson" DOUBLE PRECISION NOT NULL,
+    "classImage" TEXT,
+    "locationId" INTEGER,
+    "teacherId" INTEGER,
+    "minimumAge" INTEGER,
+    "maximumAge" INTEGER,
+    "classColor" TEXT,
+    "limitCapacity" BOOLEAN NOT NULL DEFAULT false,
+    "capacity" INTEGER,
+    "allowPortalBooking" BOOLEAN NOT NULL DEFAULT true,
+    "familyPortalTrial" BOOLEAN NOT NULL DEFAULT false,
+    "globalClassDiscount" BOOLEAN NOT NULL DEFAULT false,
+    "siblingDiscount" BOOLEAN NOT NULL DEFAULT false,
+    "classType" "public"."ClassType" NOT NULL DEFAULT 'DROP_CLASS',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DropInClass_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "public"."Terms" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "billingId" INTEGER,
     "title" TEXT NOT NULL,
     "start" BOOLEAN NOT NULL DEFAULT false,
@@ -254,8 +354,12 @@ CREATE TABLE "public"."Terms" (
     "endDate" TIMESTAMP(3) NOT NULL,
     "registrationFee" BOOLEAN NOT NULL DEFAULT false,
     "seasonSpecificFee" BOOLEAN NOT NULL DEFAULT false,
-    "paymentOptions" TEXT NOT NULL,
+    "pricingType" TEXT,
+    "paymentOptions" JSONB NOT NULL,
     "pricing" JSONB NOT NULL,
+    "seasonSpecificFees" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Terms_pkey" PRIMARY KEY ("id")
 );
@@ -263,8 +367,11 @@ CREATE TABLE "public"."Terms" (
 -- CreateTable
 CREATE TABLE "public"."Student" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
     "familyId" INTEGER,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "dateOfBirth" TIMESTAMP(3),
+    "gender" TEXT,
     "medicalInfo" TEXT,
     "photoVideoConsent" BOOLEAN NOT NULL DEFAULT false,
     "height" DOUBLE PRECISION,
@@ -278,6 +385,8 @@ CREATE TABLE "public"."Student" (
     "shoeSize" TEXT,
     "tshirtSize" TEXT,
     "meta" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Student_pkey" PRIMARY KEY ("id")
 );
@@ -285,7 +394,18 @@ CREATE TABLE "public"."Student" (
 -- CreateTable
 CREATE TABLE "public"."Family" (
     "id" SERIAL NOT NULL,
-    "name" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "familyName" TEXT NOT NULL,
+    "primaryParentFirstName" TEXT NOT NULL,
+    "primaryParentLastName" TEXT NOT NULL,
+    "primaryParentEmail" TEXT NOT NULL,
+    "primaryParentPhoneCountry" TEXT,
+    "primaryParentPhoneNumber" TEXT,
+    "sendPortalInvitation" BOOLEAN NOT NULL DEFAULT false,
+    "invitationSentAt" TIMESTAMP(3),
+    "status" TEXT DEFAULT 'ACTIVE',
+    "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -295,7 +415,7 @@ CREATE TABLE "public"."Family" (
 -- CreateTable
 CREATE TABLE "public"."BusinessOrganization" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "companyName" TEXT NOT NULL,
     "industry" TEXT NOT NULL,
     "language" TEXT NOT NULL,
@@ -336,7 +456,7 @@ CREATE TABLE "public"."Commission" (
 CREATE TABLE "public"."Cart" (
     "id" SERIAL NOT NULL,
     "classId" INTEGER,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "productTitle" TEXT NOT NULL,
     "description" TEXT,
     "amount" DOUBLE PRECISION NOT NULL,
@@ -349,7 +469,7 @@ CREATE TABLE "public"."Cart" (
 CREATE TABLE "public"."Order" (
     "id" SERIAL NOT NULL,
     "cartId" INTEGER NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "status" TEXT NOT NULL,
     "paymentId" INTEGER,
@@ -360,7 +480,7 @@ CREATE TABLE "public"."Order" (
 -- CreateTable
 CREATE TABLE "public"."Payment" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "bookingId" INTEGER,
     "paymentMethod" TEXT NOT NULL,
     "transactionId" TEXT,
@@ -377,7 +497,7 @@ CREATE TABLE "public"."Refund" (
     "reason" TEXT NOT NULL,
     "status" TEXT NOT NULL,
     "bookingId" INTEGER,
-    "userId" INTEGER,
+    "userId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Refund_pkey" PRIMARY KEY ("id")
@@ -386,11 +506,18 @@ CREATE TABLE "public"."Refund" (
 -- CreateTable
 CREATE TABLE "public"."ClassBooking" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "termId" INTEGER,
     "classId" INTEGER NOT NULL,
+    "studentId" INTEGER,
+    "enrollmentStartDate" TIMESTAMP(3),
+    "enrollmentEndDate" TIMESTAMP(3),
+    "paymentOption" TEXT,
     "paymentId" INTEGER,
+    "status" TEXT,
     "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "ClassBooking_pkey" PRIMARY KEY ("id")
 );
@@ -399,8 +526,12 @@ CREATE TABLE "public"."ClassBooking" (
 CREATE TABLE "public"."Waitlist" (
     "id" SERIAL NOT NULL,
     "termId" INTEGER,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
+    "studentId" INTEGER,
+    "classId" INTEGER,
     "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Waitlist_pkey" PRIMARY KEY ("id")
 );
@@ -408,14 +539,51 @@ CREATE TABLE "public"."Waitlist" (
 -- CreateTable
 CREATE TABLE "public"."Trial" (
     "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
+    "studentId" INTEGER,
     "classId" INTEGER NOT NULL,
     "termId" INTEGER,
+    "lessonId" INTEGER,
+    "date" TIMESTAMP(3),
     "status" TEXT NOT NULL,
     "notes" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Trial_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."DropInClassBooking" (
+    "id" SERIAL NOT NULL,
+    "userId" TEXT NOT NULL,
+    "dropInClassId" INTEGER NOT NULL,
+    "studentId" INTEGER,
+    "enrollmentDate" TIMESTAMP(3),
+    "paymentOption" TEXT,
+    "status" TEXT,
+    "date" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DropInClassBooking_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."DropInLesson" (
+    "id" SERIAL NOT NULL,
+    "dropInClassId" INTEGER NOT NULL,
+    "title" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "notes" TEXT,
+    "date" TIMESTAMP(3) NOT NULL,
+    "startTime" TEXT NOT NULL,
+    "endTime" TEXT,
+    "duration" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "DropInLesson_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -427,7 +595,7 @@ CREATE TABLE "public"."session" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "ipAddress" TEXT,
     "userAgent" TEXT,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
 
     CONSTRAINT "session_pkey" PRIMARY KEY ("id")
 );
@@ -437,7 +605,7 @@ CREATE TABLE "public"."account" (
     "id" TEXT NOT NULL,
     "accountId" TEXT NOT NULL,
     "providerId" TEXT NOT NULL,
-    "userId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
     "accessToken" TEXT,
     "refreshToken" TEXT,
     "idToken" TEXT,
@@ -473,7 +641,7 @@ CREATE UNIQUE INDEX "user_addressId_key" ON "public"."user"("addressId");
 CREATE UNIQUE INDEX "Teacher_email_key" ON "public"."Teacher"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Student_userId_key" ON "public"."Student"("userId");
+CREATE UNIQUE INDEX "Family_userId_key" ON "public"."Family"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "BusinessOrganization_userId_key" ON "public"."BusinessOrganization"("userId");
@@ -515,6 +683,12 @@ ALTER TABLE "public"."Holiday" ADD CONSTRAINT "Holiday_userId_fkey" FOREIGN KEY 
 ALTER TABLE "public"."WaiversPolicies" ADD CONSTRAINT "WaiversPolicies_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."RegistrationFee" ADD CONSTRAINT "RegistrationFee_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."CustomField" ADD CONSTRAINT "CustomField_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Message" ADD CONSTRAINT "Message_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -527,22 +701,43 @@ ALTER TABLE "public"."UserQueries" ADD CONSTRAINT "UserQueries_userId_fkey" FORE
 ALTER TABLE "public"."Discount" ADD CONSTRAINT "Discount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."DiscountTier" ADD CONSTRAINT "DiscountTier_discountId_fkey" FOREIGN KEY ("discountId") REFERENCES "public"."Discount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Class" ADD CONSTRAINT "Class_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "public"."Location"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Class" ADD CONSTRAINT "Class_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "public"."Teacher"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."Class" ADD CONSTRAINT "Class_termId_fkey" FOREIGN KEY ("termId") REFERENCES "public"."Terms"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Lesson" ADD CONSTRAINT "Lesson_classId_fkey" FOREIGN KEY ("classId") REFERENCES "public"."Class"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Camp" ADD CONSTRAINT "Camp_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."DropInClass" ADD CONSTRAINT "DropInClass_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."DropInClass" ADD CONSTRAINT "DropInClass_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "public"."Location"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."DropInClass" ADD CONSTRAINT "DropInClass_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "public"."Teacher"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Terms" ADD CONSTRAINT "Terms_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Student" ADD CONSTRAINT "Student_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "public"."Student" ADD CONSTRAINT "Student_familyId_fkey" FOREIGN KEY ("familyId") REFERENCES "public"."Family"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "public"."Student" ADD CONSTRAINT "Student_familyId_fkey" FOREIGN KEY ("familyId") REFERENCES "public"."Family"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "public"."Family" ADD CONSTRAINT "Family_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Family" ADD CONSTRAINT "Family_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."BusinessOrganization" ADD CONSTRAINT "BusinessOrganization_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -590,19 +785,46 @@ ALTER TABLE "public"."ClassBooking" ADD CONSTRAINT "ClassBooking_termId_fkey" FO
 ALTER TABLE "public"."ClassBooking" ADD CONSTRAINT "ClassBooking_classId_fkey" FOREIGN KEY ("classId") REFERENCES "public"."Class"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."ClassBooking" ADD CONSTRAINT "ClassBooking_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Waitlist" ADD CONSTRAINT "Waitlist_termId_fkey" FOREIGN KEY ("termId") REFERENCES "public"."Terms"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Waitlist" ADD CONSTRAINT "Waitlist_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."Waitlist" ADD CONSTRAINT "Waitlist_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Waitlist" ADD CONSTRAINT "Waitlist_classId_fkey" FOREIGN KEY ("classId") REFERENCES "public"."Class"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."Trial" ADD CONSTRAINT "Trial_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Trial" ADD CONSTRAINT "Trial_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Trial" ADD CONSTRAINT "Trial_classId_fkey" FOREIGN KEY ("classId") REFERENCES "public"."Class"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."Trial" ADD CONSTRAINT "Trial_termId_fkey" FOREIGN KEY ("termId") REFERENCES "public"."Terms"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."Trial" ADD CONSTRAINT "Trial_lessonId_fkey" FOREIGN KEY ("lessonId") REFERENCES "public"."Lesson"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."DropInClassBooking" ADD CONSTRAINT "DropInClassBooking_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."DropInClassBooking" ADD CONSTRAINT "DropInClassBooking_dropInClassId_fkey" FOREIGN KEY ("dropInClassId") REFERENCES "public"."DropInClass"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."DropInClassBooking" ADD CONSTRAINT "DropInClassBooking_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "public"."Student"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."DropInLesson" ADD CONSTRAINT "DropInLesson_dropInClassId_fkey" FOREIGN KEY ("dropInClassId") REFERENCES "public"."DropInClass"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "public"."session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
