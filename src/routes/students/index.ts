@@ -3,8 +3,9 @@ import { STUDENTS_HANDLER } from '~/routes/students/students.handler'
 import { STUDENTS_ROUTES } from '~/routes/students/students.routes'
 
 const router = createRouter()
-Object.entries(STUDENTS_ROUTES).forEach(([key, route]) => {
-  router.openapi(route, STUDENTS_HANDLER[key as keyof typeof STUDENTS_HANDLER])
+;(Object.keys(STUDENTS_ROUTES) as Array<keyof typeof STUDENTS_ROUTES>).forEach(key => {
+  // biome-ignore lint/suspicious/noExplicitAny: HandlerMapFromRoutes ensures type safety
+  router.openapi(STUDENTS_ROUTES[key], STUDENTS_HANDLER[key] as any)
 })
 
 export default router

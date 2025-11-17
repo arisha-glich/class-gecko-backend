@@ -3,8 +3,9 @@ import { DROPIN_LESSONS_HANDLER } from '~/routes/dropin-lessons/dropin-lessons.h
 import { DROPIN_LESSONS_ROUTES } from '~/routes/dropin-lessons/dropin-lessons.routes'
 
 const router = createRouter()
-Object.entries(DROPIN_LESSONS_ROUTES).forEach(([key, route]) => {
-  router.openapi(route, DROPIN_LESSONS_HANDLER[key as keyof typeof DROPIN_LESSONS_HANDLER])
+;(Object.keys(DROPIN_LESSONS_ROUTES) as Array<keyof typeof DROPIN_LESSONS_ROUTES>).forEach(key => {
+  // biome-ignore lint/suspicious/noExplicitAny: HandlerMapFromRoutes ensures type safety
+  router.openapi(DROPIN_LESSONS_ROUTES[key], DROPIN_LESSONS_HANDLER[key] as any)
 })
 
 export default router
