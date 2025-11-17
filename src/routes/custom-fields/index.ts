@@ -3,8 +3,8 @@ import { CUSTOM_FIELDS_HANDLER } from '~/routes/custom-fields/custom-fields.hand
 import { CUSTOM_FIELDS_ROUTES } from '~/routes/custom-fields/custom-fields.routes'
 
 const router = createRouter()
-Object.entries(CUSTOM_FIELDS_ROUTES).forEach(([key, route]) => {
-  router.openapi(route, CUSTOM_FIELDS_HANDLER[key as keyof typeof CUSTOM_FIELDS_HANDLER])
+;(Object.keys(CUSTOM_FIELDS_ROUTES) as Array<keyof typeof CUSTOM_FIELDS_ROUTES>).forEach(key => {
+  router.openapi(CUSTOM_FIELDS_ROUTES[key], CUSTOM_FIELDS_HANDLER[key])
 })
 
 export default router
