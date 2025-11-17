@@ -144,4 +144,3 @@ export const CUSTOM_FIELDS_ROUTES = {
 }
 
 export type CustomFieldsRoutes = typeof CUSTOM_FIELDS_ROUTES
-

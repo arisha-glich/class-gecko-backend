@@ -1,7 +1,7 @@
 import * as HttpStatusCodes from 'stoker/http-status-codes'
 import type { LOCATIONS_ROUTES } from '~/routes/locations/locations.routes'
-import type { HandlerMapFromRoutes } from '~/types'
 import * as locationsService from '~/services/locations.service'
+import type { HandlerMapFromRoutes } from '~/types'
 
 export const LOCATIONS_HANDLER: HandlerMapFromRoutes<typeof LOCATIONS_ROUTES> = {
   createLocation: async c => {
@@ -23,10 +23,7 @@ export const LOCATIONS_HANDLER: HandlerMapFromRoutes<typeof LOCATIONS_ROUTES> = 
       )
     } catch (error) {
       console.error('Error creating location:', error)
-      return c.json(
-        { message: 'Failed to create location' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to create location' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -48,10 +45,7 @@ export const LOCATIONS_HANDLER: HandlerMapFromRoutes<typeof LOCATIONS_ROUTES> = 
       )
     } catch (error) {
       console.error('Error fetching locations:', error)
-      return c.json(
-        { message: 'Failed to fetch locations' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to fetch locations' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -77,10 +71,7 @@ export const LOCATIONS_HANDLER: HandlerMapFromRoutes<typeof LOCATIONS_ROUTES> = 
       )
     } catch (error) {
       console.error('Error fetching location:', error)
-      return c.json(
-        { message: 'Failed to fetch location' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to fetch location' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -107,10 +98,7 @@ export const LOCATIONS_HANDLER: HandlerMapFromRoutes<typeof LOCATIONS_ROUTES> = 
       )
     } catch (error) {
       console.error('Error updating location:', error)
-      return c.json(
-        { message: 'Failed to update location' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to update location' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -135,11 +123,7 @@ export const LOCATIONS_HANDLER: HandlerMapFromRoutes<typeof LOCATIONS_ROUTES> = 
       )
     } catch (error) {
       console.error('Error deleting location:', error)
-      return c.json(
-        { message: 'Failed to delete location' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to delete location' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 }
-

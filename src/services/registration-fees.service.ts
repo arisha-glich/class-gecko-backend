@@ -84,4 +84,3 @@ export async function deleteRegistrationFee(id: number, userId: string) {
 
   return true
 }
-

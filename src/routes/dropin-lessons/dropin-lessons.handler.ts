@@ -1,7 +1,7 @@
 import * as HttpStatusCodes from 'stoker/http-status-codes'
 import type { DROPIN_LESSONS_ROUTES } from '~/routes/dropin-lessons/dropin-lessons.routes'
-import type { HandlerMapFromRoutes } from '~/types'
 import * as dropInLessonsService from '~/services/dropin-lessons.service'
+import type { HandlerMapFromRoutes } from '~/types'
 
 export const DROPIN_LESSONS_HANDLER: HandlerMapFromRoutes<typeof DROPIN_LESSONS_ROUTES> = {
   createDropInLesson: async c => {
@@ -168,4 +168,3 @@ export const DROPIN_LESSONS_HANDLER: HandlerMapFromRoutes<typeof DROPIN_LESSONS_
     }
   },
 }
-

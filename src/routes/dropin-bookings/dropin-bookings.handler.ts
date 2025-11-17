@@ -1,7 +1,7 @@
 import * as HttpStatusCodes from 'stoker/http-status-codes'
 import type { DROPIN_BOOKINGS_ROUTES } from '~/routes/dropin-bookings/dropin-bookings.routes'
-import type { HandlerMapFromRoutes } from '~/types'
 import * as dropInBookingsService from '~/services/dropin-bookings.service'
+import type { HandlerMapFromRoutes } from '~/types'
 
 export const DROPIN_BOOKINGS_HANDLER: HandlerMapFromRoutes<typeof DROPIN_BOOKINGS_ROUTES> = {
   createDropInBooking: async c => {
@@ -66,10 +66,7 @@ export const DROPIN_BOOKINGS_HANDLER: HandlerMapFromRoutes<typeof DROPIN_BOOKING
 
     const { id } = c.req.valid('param')
     try {
-      const booking = await dropInBookingsService.getDropInBookingById(
-        Number(id),
-        authUser.id
-      )
+      const booking = await dropInBookingsService.getDropInBookingById(Number(id), authUser.id)
       if (!booking) {
         return c.json({ message: 'Drop-in booking not found' }, HttpStatusCodes.NOT_FOUND)
       }
@@ -128,11 +125,7 @@ export const DROPIN_BOOKINGS_HANDLER: HandlerMapFromRoutes<typeof DROPIN_BOOKING
     const { id } = c.req.valid('param')
     const body = await c.req.valid('json')
     try {
-      const booking = await dropInBookingsService.updateDropInBooking(
-        Number(id),
-        authUser.id,
-        body
-      )
+      const booking = await dropInBookingsService.updateDropInBooking(Number(id), authUser.id, body)
       if (!booking) {
         return c.json({ message: 'Drop-in booking not found' }, HttpStatusCodes.NOT_FOUND)
       }
@@ -181,4 +174,3 @@ export const DROPIN_BOOKINGS_HANDLER: HandlerMapFromRoutes<typeof DROPIN_BOOKING
     }
   },
 }
-

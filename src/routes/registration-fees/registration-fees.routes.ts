@@ -104,10 +104,7 @@ export const REGISTRATION_FEES_ROUTES = {
     summary: 'Update a registration fee',
     request: {
       params: RegistrationFeeParamsSchema,
-      body: jsonContentRequired(
-        UpdateRegistrationFeeBodySchema,
-        'Registration fee update payload'
-      ),
+      body: jsonContentRequired(UpdateRegistrationFeeBodySchema, 'Registration fee update payload'),
     },
     responses: {
       [HttpStatusCodes.OK]: jsonContent(
@@ -147,4 +144,3 @@ export const REGISTRATION_FEES_ROUTES = {
 }
 
 export type RegistrationFeesRoutes = typeof REGISTRATION_FEES_ROUTES
-

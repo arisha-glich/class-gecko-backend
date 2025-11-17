@@ -43,9 +43,12 @@ export async function createDiscount(data: CreateDiscountData) {
         discountType: data.discountType,
         discountValue: data.discountValue,
         appliesTo: data.appliesTo,
+        // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
         applicableClassIds: (data.applicableClassIds ?? null) as any,
+        // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
         applicableClassTypes: (data.applicableClassTypes ?? null) as any,
         minEnrollmentCount: data.minEnrollmentCount ?? null,
+        // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
         siblingConfig: (data.siblingConfig ?? null) as any,
         validFrom: new Date(data.validFrom),
         validUntil: new Date(data.validUntil),
@@ -95,6 +98,61 @@ export async function getDiscountById(id: number, userId: string) {
   })
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Data mapping function with many optional fields
+function buildDiscountUpdateData(data: UpdateDiscountData) {
+  return {
+    ...(data.title !== undefined && { title: data.title }),
+    ...(data.description !== undefined && { description: data.description }),
+    ...(data.discountType !== undefined && { discountType: data.discountType }),
+    ...(data.discountValue !== undefined && { discountValue: data.discountValue }),
+    ...(data.appliesTo !== undefined && { appliesTo: data.appliesTo }),
+    ...(data.applicableClassIds !== undefined && {
+      // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
+      applicableClassIds: (data.applicableClassIds ?? null) as any,
+    }),
+    ...(data.applicableClassTypes !== undefined && {
+      // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
+      applicableClassTypes: (data.applicableClassTypes ?? null) as any,
+    }),
+    ...(data.minEnrollmentCount !== undefined && {
+      minEnrollmentCount: data.minEnrollmentCount,
+    }),
+    ...(data.siblingConfig !== undefined && {
+      // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
+      siblingConfig: (data.siblingConfig ?? null) as any,
+    }),
+    ...(data.validFrom !== undefined && { validFrom: new Date(data.validFrom) }),
+    ...(data.validUntil !== undefined && { validUntil: new Date(data.validUntil) }),
+    ...(data.maxUsesTotal !== undefined && { maxUsesTotal: data.maxUsesTotal }),
+    ...(data.maxUsesPerFamily !== undefined && { maxUsesPerFamily: data.maxUsesPerFamily }),
+    ...(data.isActive !== undefined && { isActive: data.isActive }),
+    ...(data.category !== undefined && { category: data.category }),
+  }
+}
+
+async function updateDiscountTiers(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  discountId: number,
+  tiers: DiscountTierInput[] | null | undefined
+) {
+  if (tiers === undefined) {
+    return
+  }
+  await tx.discountTier.deleteMany({
+    where: { discountId },
+  })
+  if (tiers && tiers.length > 0) {
+    await tx.discountTier.createMany({
+      data: tiers.map(tier => ({
+        discountId,
+        studentsPerFamily: tier.studentsPerFamily ?? null,
+        classesPerStudent: tier.classesPerStudent ?? null,
+        percentageOff: tier.percentageOff,
+      })),
+    })
+  }
+}
+
 export async function updateDiscount(id: number, userId: string, data: UpdateDiscountData) {
   return prisma.$transaction(async tx => {
     const existing = await tx.discount.findFirst({
@@ -105,50 +163,12 @@ export async function updateDiscount(id: number, userId: string, data: UpdateDis
       return null
     }
 
-    const updated = await tx.discount.update({
+    await tx.discount.update({
       where: { id },
-      data: {
-        ...(data.title !== undefined && { title: data.title }),
-        ...(data.description !== undefined && { description: data.description }),
-        ...(data.discountType !== undefined && { discountType: data.discountType }),
-        ...(data.discountValue !== undefined && { discountValue: data.discountValue }),
-        ...(data.appliesTo !== undefined && { appliesTo: data.appliesTo }),
-        ...(data.applicableClassIds !== undefined && {
-          applicableClassIds: (data.applicableClassIds ?? null) as any,
-        }),
-        ...(data.applicableClassTypes !== undefined && {
-          applicableClassTypes: (data.applicableClassTypes ?? null) as any,
-        }),
-        ...(data.minEnrollmentCount !== undefined && {
-          minEnrollmentCount: data.minEnrollmentCount,
-        }),
-        ...(data.siblingConfig !== undefined && {
-          siblingConfig: (data.siblingConfig ?? null) as any,
-        }),
-        ...(data.validFrom !== undefined && { validFrom: new Date(data.validFrom) }),
-        ...(data.validUntil !== undefined && { validUntil: new Date(data.validUntil) }),
-        ...(data.maxUsesTotal !== undefined && { maxUsesTotal: data.maxUsesTotal }),
-        ...(data.maxUsesPerFamily !== undefined && { maxUsesPerFamily: data.maxUsesPerFamily }),
-        ...(data.isActive !== undefined && { isActive: data.isActive }),
-        ...(data.category !== undefined && { category: data.category }),
-      },
+      data: buildDiscountUpdateData(data),
     })
 
-    if (data.tiers) {
-      await tx.discountTier.deleteMany({
-        where: { discountId: id },
-      })
-      if (data.tiers.length > 0) {
-        await tx.discountTier.createMany({
-          data: data.tiers.map(tier => ({
-            discountId: id,
-            studentsPerFamily: tier.studentsPerFamily ?? null,
-            classesPerStudent: tier.classesPerStudent ?? null,
-            percentageOff: tier.percentageOff,
-          })),
-        })
-      }
-    }
+    await updateDiscountTiers(tx, id, data.tiers)
 
     return tx.discount.findUnique({
       where: { id },

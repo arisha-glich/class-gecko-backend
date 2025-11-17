@@ -19,6 +19,7 @@ export async function createCustomField(data: CreateCustomFieldData) {
       appliesTo: data.appliesTo,
       question: data.question,
       answerType: data.answerType,
+      // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
       options: (data.options ?? null) as any,
       isRequired: data.isRequired ?? false,
       isActive: data.isActive ?? true,
@@ -39,11 +40,7 @@ export async function getCustomFieldById(id: number, userId: string) {
   })
 }
 
-export async function updateCustomField(
-  id: number,
-  userId: string,
-  data: UpdateCustomFieldData
-) {
+export async function updateCustomField(id: number, userId: string, data: UpdateCustomFieldData) {
   const existing = await prisma.customField.findFirst({
     where: { id, userId },
     select: { id: true },
@@ -59,7 +56,10 @@ export async function updateCustomField(
       ...(data.appliesTo !== undefined && { appliesTo: data.appliesTo }),
       ...(data.question !== undefined && { question: data.question }),
       ...(data.answerType !== undefined && { answerType: data.answerType }),
-      ...(data.options !== undefined && { options: (data.options ?? null) as any }),
+      ...(data.options !== undefined && {
+        // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
+        options: (data.options ?? null) as any,
+      }),
       ...(data.isRequired !== undefined && { isRequired: data.isRequired }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
     },
@@ -82,4 +82,3 @@ export async function deleteCustomField(id: number, userId: string) {
 
   return true
 }
-

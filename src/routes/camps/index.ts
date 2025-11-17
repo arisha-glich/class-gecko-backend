@@ -3,10 +3,8 @@ import { CAMPS_HANDLER } from '~/routes/camps/camps.handler'
 import { CAMPS_ROUTES } from '~/routes/camps/camps.routes'
 
 const router = createRouter()
-  .openapi(CAMPS_ROUTES.createCamp, CAMPS_HANDLER.createCamp)
-  .openapi(CAMPS_ROUTES.getCamps, CAMPS_HANDLER.getCamps)
-  .openapi(CAMPS_ROUTES.getCamp, CAMPS_HANDLER.getCamp)
-  .openapi(CAMPS_ROUTES.updateCamp, CAMPS_HANDLER.updateCamp)
-  .openapi(CAMPS_ROUTES.deleteCamp, CAMPS_HANDLER.deleteCamp)
+Object.entries(CAMPS_ROUTES).forEach(([key, route]) => {
+  router.openapi(route, CAMPS_HANDLER[key as keyof typeof CAMPS_HANDLER])
+})
 
 export default router

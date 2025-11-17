@@ -3,7 +3,8 @@ import { ORGANIZATION_HANDLER } from '~/routes/organization/organization.handler
 import { ORGANIZATION_ROUTES } from '~/routes/organization/organization.routes'
 
 const router = createRouter()
-  .openapi(ORGANIZATION_ROUTES.getOrganization, ORGANIZATION_HANDLER.getOrganization)
-  .openapi(ORGANIZATION_ROUTES.updateOrganization, ORGANIZATION_HANDLER.updateOrganization)
+Object.entries(ORGANIZATION_ROUTES).forEach(([key, route]) => {
+  router.openapi(route, ORGANIZATION_HANDLER[key as keyof typeof ORGANIZATION_HANDLER])
+})
 
 export default router

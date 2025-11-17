@@ -1,11 +1,9 @@
 import * as HttpStatusCodes from 'stoker/http-status-codes'
 import type { REGISTRATION_FEES_ROUTES } from '~/routes/registration-fees/registration-fees.routes'
-import type { HandlerMapFromRoutes } from '~/types'
 import * as registrationFeesService from '~/services/registration-fees.service'
+import type { HandlerMapFromRoutes } from '~/types'
 
-export const REGISTRATION_FEES_HANDLER: HandlerMapFromRoutes<
-  typeof REGISTRATION_FEES_ROUTES
-> = {
+export const REGISTRATION_FEES_HANDLER: HandlerMapFromRoutes<typeof REGISTRATION_FEES_ROUTES> = {
   createRegistrationFee: async c => {
     const authUser = c.get('user')
     if (!authUser) {
@@ -68,10 +66,7 @@ export const REGISTRATION_FEES_HANDLER: HandlerMapFromRoutes<
 
     const { id } = c.req.valid('param')
     try {
-      const fee = await registrationFeesService.getRegistrationFeeById(
-        Number(id),
-        authUser.id
-      )
+      const fee = await registrationFeesService.getRegistrationFeeById(Number(id), authUser.id)
       if (!fee) {
         return c.json({ message: 'Registration fee not found' }, HttpStatusCodes.NOT_FOUND)
       }
@@ -101,11 +96,7 @@ export const REGISTRATION_FEES_HANDLER: HandlerMapFromRoutes<
     const { id } = c.req.valid('param')
     const body = await c.req.valid('json')
     try {
-      const fee = await registrationFeesService.updateRegistrationFee(
-        Number(id),
-        authUser.id,
-        body
-      )
+      const fee = await registrationFeesService.updateRegistrationFee(Number(id), authUser.id, body)
       if (!fee) {
         return c.json({ message: 'Registration fee not found' }, HttpStatusCodes.NOT_FOUND)
       }
@@ -134,10 +125,7 @@ export const REGISTRATION_FEES_HANDLER: HandlerMapFromRoutes<
 
     const { id } = c.req.valid('param')
     try {
-      const deleted = await registrationFeesService.deleteRegistrationFee(
-        Number(id),
-        authUser.id
-      )
+      const deleted = await registrationFeesService.deleteRegistrationFee(Number(id), authUser.id)
       if (!deleted) {
         return c.json({ message: 'Registration fee not found' }, HttpStatusCodes.NOT_FOUND)
       }
@@ -157,4 +145,3 @@ export const REGISTRATION_FEES_HANDLER: HandlerMapFromRoutes<
     }
   },
 }
-

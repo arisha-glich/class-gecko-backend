@@ -75,4 +75,3 @@ export async function deleteHoliday(id: number, userId: string) {
 
   return true
 }
-

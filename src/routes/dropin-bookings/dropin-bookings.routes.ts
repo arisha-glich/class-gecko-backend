@@ -206,4 +206,3 @@ export const DROPIN_BOOKINGS_ROUTES = {
 }
 
 export type DropInBookingsRoutes = typeof DROPIN_BOOKINGS_ROUTES
-

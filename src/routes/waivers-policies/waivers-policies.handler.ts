@@ -1,11 +1,9 @@
 import * as HttpStatusCodes from 'stoker/http-status-codes'
 import type { WAIVERS_POLICIES_ROUTES } from '~/routes/waivers-policies/waivers-policies.routes'
-import type { HandlerMapFromRoutes } from '~/types'
 import * as waiversPoliciesService from '~/services/waivers-policies.service'
+import type { HandlerMapFromRoutes } from '~/types'
 
-export const WAIVERS_POLICIES_HANDLER: HandlerMapFromRoutes<
-  typeof WAIVERS_POLICIES_ROUTES
-> = {
+export const WAIVERS_POLICIES_HANDLER: HandlerMapFromRoutes<typeof WAIVERS_POLICIES_ROUTES> = {
   createWaiverPolicy: async c => {
     const authUser = c.get('user')
     if (!authUser) {
@@ -147,4 +145,3 @@ export const WAIVERS_POLICIES_HANDLER: HandlerMapFromRoutes<
     }
   },
 }
-

@@ -47,8 +47,11 @@ export async function createTerm(data: CreateTermData) {
       registrationFee: data.registrationFee ?? false,
       seasonSpecificFee: data.seasonSpecificFee ?? false,
       pricingType: data.pricingType,
+      // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
       paymentOptions: (data.billingOptions ?? []) as any, // Store billing options in paymentOptions JSON field
+      // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
       pricing: (data.pricing ?? {}) as any,
+      // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
       seasonSpecificFees: (data.seasonSpecificFees ?? null) as any,
     },
   })
@@ -56,8 +59,11 @@ export async function createTerm(data: CreateTermData) {
 }
 
 // Helper function to transform paymentOptions to billingOptions
+// biome-ignore lint/suspicious/noExplicitAny: Term type from Prisma includes JSON fields
 function transformTermResponse(term: any) {
-  if (!term) return term
+  if (!term) {
+    return term
+  }
   const { paymentOptions, ...rest } = term
   return {
     ...rest,
@@ -104,9 +110,16 @@ export async function updateTerm(id: number, userId: string, data: UpdateTermDat
       ...(data.registrationFee !== undefined && { registrationFee: data.registrationFee }),
       ...(data.seasonSpecificFee !== undefined && { seasonSpecificFee: data.seasonSpecificFee }),
       ...(data.pricingType && { pricingType: data.pricingType }),
-      ...(data.billingOptions !== undefined && { paymentOptions: data.billingOptions as any }),
-      ...(data.pricing && { pricing: data.pricing as any }),
+      ...(data.billingOptions !== undefined && {
+        // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
+        paymentOptions: data.billingOptions as any,
+      }),
+      ...(data.pricing && {
+        // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
+        pricing: data.pricing as any,
+      }),
       ...(data.seasonSpecificFees !== undefined && {
+        // biome-ignore lint/suspicious/noExplicitAny: Prisma JSON field requires any type
         seasonSpecificFees: data.seasonSpecificFees as any,
       }),
     },

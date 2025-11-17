@@ -6,7 +6,9 @@ import type { HandlerMapFromRoutes } from '~/types'
 export const DISCOUNTS_HANDLER: HandlerMapFromRoutes<typeof DISCOUNTS_ROUTES> = {
   createDiscount: async c => {
     const authUser = c.get('user')
-    if (!authUser) return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    if (!authUser) {
+      return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    }
     const body = await c.req.valid('json')
     try {
       const discount = await discountsService.createDiscount({
@@ -25,7 +27,9 @@ export const DISCOUNTS_HANDLER: HandlerMapFromRoutes<typeof DISCOUNTS_ROUTES> = 
 
   getDiscounts: async c => {
     const authUser = c.get('user')
-    if (!authUser) return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    if (!authUser) {
+      return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    }
     const discounts = await discountsService.getDiscounts(authUser.id)
     return c.json(
       { message: 'Discounts retrieved successfully', success: true, data: discounts },
@@ -35,7 +39,9 @@ export const DISCOUNTS_HANDLER: HandlerMapFromRoutes<typeof DISCOUNTS_ROUTES> = 
 
   getDiscount: async c => {
     const authUser = c.get('user')
-    if (!authUser) return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    if (!authUser) {
+      return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    }
     const { id } = c.req.valid('param')
     const discount = await discountsService.getDiscountById(Number(id), authUser.id)
     if (!discount) {
@@ -49,7 +55,9 @@ export const DISCOUNTS_HANDLER: HandlerMapFromRoutes<typeof DISCOUNTS_ROUTES> = 
 
   updateDiscount: async c => {
     const authUser = c.get('user')
-    if (!authUser) return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    if (!authUser) {
+      return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    }
     const { id } = c.req.valid('param')
     const body = await c.req.valid('json')
     const discount = await discountsService.updateDiscount(Number(id), authUser.id, body)
@@ -64,7 +72,9 @@ export const DISCOUNTS_HANDLER: HandlerMapFromRoutes<typeof DISCOUNTS_ROUTES> = 
 
   deleteDiscount: async c => {
     const authUser = c.get('user')
-    if (!authUser) return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    if (!authUser) {
+      return c.json({ message: 'Unauthorized' }, HttpStatusCodes.UNAUTHORIZED)
+    }
     const { id } = c.req.valid('param')
     const deleted = await discountsService.deleteDiscount(Number(id), authUser.id)
     if (!deleted) {

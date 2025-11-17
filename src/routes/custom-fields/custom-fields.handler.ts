@@ -1,7 +1,7 @@
 import * as HttpStatusCodes from 'stoker/http-status-codes'
 import type { CUSTOM_FIELDS_ROUTES } from '~/routes/custom-fields/custom-fields.routes'
-import type { HandlerMapFromRoutes } from '~/types'
 import * as customFieldsService from '~/services/custom-fields.service'
+import type { HandlerMapFromRoutes } from '~/types'
 
 export const CUSTOM_FIELDS_HANDLER: HandlerMapFromRoutes<typeof CUSTOM_FIELDS_ROUTES> = {
   createCustomField: async c => {
@@ -145,4 +145,3 @@ export const CUSTOM_FIELDS_HANDLER: HandlerMapFromRoutes<typeof CUSTOM_FIELDS_RO
     }
   },
 }
-

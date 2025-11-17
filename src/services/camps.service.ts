@@ -21,6 +21,7 @@ export interface UpdateCampData {
   offerLatePickup?: boolean
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: Camp type from Prisma
 function mapCamp(camp: any) {
   return camp
 }

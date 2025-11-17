@@ -1,5 +1,5 @@
 import { type EmailTemplate, emailSubjects, renderEmailTemplate } from '~/lib/email-render'
-import { appEventEmitter, type MailEvent } from '~/lib/event-emitter'
+import { appEventEmitter } from '~/lib/event-emitter'
 import {
   emailService as baseEmailService,
   registerEmailListeners as baseRegister,

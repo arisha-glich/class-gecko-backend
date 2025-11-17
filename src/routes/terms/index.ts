@@ -3,10 +3,8 @@ import { TERMS_HANDLER } from '~/routes/terms/terms.handler'
 import { TERMS_ROUTES } from '~/routes/terms/terms.routes'
 
 const router = createRouter()
-  .openapi(TERMS_ROUTES.createTerm, TERMS_HANDLER.createTerm)
-  .openapi(TERMS_ROUTES.getTerms, TERMS_HANDLER.getTerms)
-  .openapi(TERMS_ROUTES.getTerm, TERMS_HANDLER.getTerm)
-  .openapi(TERMS_ROUTES.updateTerm, TERMS_HANDLER.updateTerm)
-  .openapi(TERMS_ROUTES.deleteTerm, TERMS_HANDLER.deleteTerm)
+Object.entries(TERMS_ROUTES).forEach(([key, route]) => {
+  router.openapi(route, TERMS_HANDLER[key as keyof typeof TERMS_HANDLER])
+})
 
 export default router

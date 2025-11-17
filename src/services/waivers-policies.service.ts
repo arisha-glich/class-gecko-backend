@@ -33,11 +33,7 @@ export async function getWaiverPolicyById(id: number, userId: string) {
   })
 }
 
-export async function updateWaiverPolicy(
-  id: number,
-  userId: string,
-  data: UpdateWaiverPolicyData
-) {
+export async function updateWaiverPolicy(id: number, userId: string, data: UpdateWaiverPolicyData) {
   const existing = await prisma.waiversPolicies.findFirst({
     where: { id, userId },
     select: { id: true },
@@ -73,4 +69,3 @@ export async function deleteWaiverPolicy(id: number, userId: string) {
 
   return true
 }
-

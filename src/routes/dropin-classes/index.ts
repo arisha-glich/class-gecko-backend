@@ -3,10 +3,8 @@ import { DROPIN_CLASSES_HANDLER } from '~/routes/dropin-classes/dropin-classes.h
 import { DROPIN_CLASSES_ROUTES } from '~/routes/dropin-classes/dropin-classes.routes'
 
 const router = createRouter()
-  .openapi(DROPIN_CLASSES_ROUTES.createDropInClass, DROPIN_CLASSES_HANDLER.createDropInClass)
-  .openapi(DROPIN_CLASSES_ROUTES.getDropInClasses, DROPIN_CLASSES_HANDLER.getDropInClasses)
-  .openapi(DROPIN_CLASSES_ROUTES.getDropInClass, DROPIN_CLASSES_HANDLER.getDropInClass)
-  .openapi(DROPIN_CLASSES_ROUTES.updateDropInClass, DROPIN_CLASSES_HANDLER.updateDropInClass)
-  .openapi(DROPIN_CLASSES_ROUTES.deleteDropInClass, DROPIN_CLASSES_HANDLER.deleteDropInClass)
+Object.entries(DROPIN_CLASSES_ROUTES).forEach(([key, route]) => {
+  router.openapi(route, DROPIN_CLASSES_HANDLER[key as keyof typeof DROPIN_CLASSES_HANDLER])
+})
 
 export default router

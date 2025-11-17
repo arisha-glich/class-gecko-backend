@@ -77,6 +77,32 @@ export async function getStudentById(id: number, organizationId: string) {
   })
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Data mapping function with many optional fields
+function buildStudentUpdateData(data: UpdateStudentData) {
+  return {
+    ...(data.firstName !== undefined && { firstName: data.firstName }),
+    ...(data.lastName !== undefined && { lastName: data.lastName }),
+    ...(data.dateOfBirth !== undefined && {
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+    }),
+    ...(data.gender !== undefined && { gender: data.gender }),
+    ...(data.medicalInfo !== undefined && { medicalInfo: data.medicalInfo }),
+    ...(data.photoVideoConsent !== undefined && {
+      photoVideoConsent: data.photoVideoConsent,
+    }),
+    ...(data.height !== undefined && { height: data.height }),
+    ...(data.neck !== undefined && { neck: data.neck }),
+    ...(data.girth !== undefined && { girth: data.girth }),
+    ...(data.chest !== undefined && { chest: data.chest }),
+    ...(data.braSize !== undefined && { braSize: data.braSize }),
+    ...(data.waist !== undefined && { waist: data.waist }),
+    ...(data.hips !== undefined && { hips: data.hips }),
+    ...(data.inseam !== undefined && { inseam: data.inseam }),
+    ...(data.shoeSize !== undefined && { shoeSize: data.shoeSize }),
+    ...(data.tshirtSize !== undefined && { tshirtSize: data.tshirtSize }),
+  }
+}
+
 export async function updateStudent(id: number, organizationId: string, data: UpdateStudentData) {
   const existing = await prisma.student.findFirst({
     where: {
@@ -94,28 +120,7 @@ export async function updateStudent(id: number, organizationId: string, data: Up
 
   const updated = await prisma.student.update({
     where: { id },
-    data: {
-      ...(data.firstName !== undefined && { firstName: data.firstName }),
-      ...(data.lastName !== undefined && { lastName: data.lastName }),
-      ...(data.dateOfBirth !== undefined && {
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-      }),
-      ...(data.gender !== undefined && { gender: data.gender }),
-      ...(data.medicalInfo !== undefined && { medicalInfo: data.medicalInfo }),
-      ...(data.photoVideoConsent !== undefined && {
-        photoVideoConsent: data.photoVideoConsent,
-      }),
-      ...(data.height !== undefined && { height: data.height }),
-      ...(data.neck !== undefined && { neck: data.neck }),
-      ...(data.girth !== undefined && { girth: data.girth }),
-      ...(data.chest !== undefined && { chest: data.chest }),
-      ...(data.braSize !== undefined && { braSize: data.braSize }),
-      ...(data.waist !== undefined && { waist: data.waist }),
-      ...(data.hips !== undefined && { hips: data.hips }),
-      ...(data.inseam !== undefined && { inseam: data.inseam }),
-      ...(data.shoeSize !== undefined && { shoeSize: data.shoeSize }),
-      ...(data.tshirtSize !== undefined && { tshirtSize: data.tshirtSize }),
-    },
+    data: buildStudentUpdateData(data),
     include: {
       family: {
         select: {

@@ -3,10 +3,8 @@ import { DISCOUNTS_HANDLER } from '~/routes/discounts/discounts.handler'
 import { DISCOUNTS_ROUTES } from '~/routes/discounts/discounts.routes'
 
 const router = createRouter()
-  .openapi(DISCOUNTS_ROUTES.createDiscount, DISCOUNTS_HANDLER.createDiscount)
-  .openapi(DISCOUNTS_ROUTES.getDiscounts, DISCOUNTS_HANDLER.getDiscounts)
-  .openapi(DISCOUNTS_ROUTES.getDiscount, DISCOUNTS_HANDLER.getDiscount)
-  .openapi(DISCOUNTS_ROUTES.updateDiscount, DISCOUNTS_HANDLER.updateDiscount)
-  .openapi(DISCOUNTS_ROUTES.deleteDiscount, DISCOUNTS_HANDLER.deleteDiscount)
+Object.entries(DISCOUNTS_ROUTES).forEach(([key, route]) => {
+  router.openapi(route, DISCOUNTS_HANDLER[key as keyof typeof DISCOUNTS_HANDLER])
+})
 
 export default router

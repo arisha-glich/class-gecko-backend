@@ -3,11 +3,8 @@ import { LESSONS_HANDLER } from '~/routes/lessons/lessons.handler'
 import { LESSONS_ROUTES } from '~/routes/lessons/lessons.routes'
 
 const router = createRouter()
-  .openapi(LESSONS_ROUTES.createLesson, LESSONS_HANDLER.createLesson)
-  .openapi(LESSONS_ROUTES.getLessons, LESSONS_HANDLER.getLessons)
-  .openapi(LESSONS_ROUTES.getLesson, LESSONS_HANDLER.getLesson)
-  .openapi(LESSONS_ROUTES.getLessonsByClass, LESSONS_HANDLER.getLessonsByClass)
-  .openapi(LESSONS_ROUTES.updateLesson, LESSONS_HANDLER.updateLesson)
-  .openapi(LESSONS_ROUTES.deleteLesson, LESSONS_HANDLER.deleteLesson)
+Object.entries(LESSONS_ROUTES).forEach(([key, route]) => {
+  router.openapi(route, LESSONS_HANDLER[key as keyof typeof LESSONS_HANDLER])
+})
 
 export default router

@@ -148,6 +148,38 @@ export async function getClassById(id: number) {
   })
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Data mapping function with many optional fields
+function buildClassUpdateData(data: UpdateClassData) {
+  return {
+    ...(data.title && { title: data.title }),
+    ...(data.description !== undefined && { description: data.description }),
+    ...(data.startDate && { startDate: new Date(data.startDate) }),
+    ...(data.endDate && { endDate: new Date(data.endDate) }),
+    ...(data.frequency && { frequency: data.frequency }),
+    ...(data.recurringDay !== undefined && { recurringDay: data.recurringDay }),
+    ...(data.startTimeOfClass && { startTimeOfClass: data.startTimeOfClass }),
+    ...(data.endTimeOfClass !== undefined && { endTimeOfClass: data.endTimeOfClass }),
+    ...(data.duration && { duration: data.duration }),
+    ...(data.pricingPerLesson && { pricingPerLesson: data.pricingPerLesson }),
+    ...(data.classImage !== undefined && { classImage: data.classImage }),
+    ...(data.locationId !== undefined && { locationId: data.locationId }),
+    ...(data.teacherId !== undefined && { teacherId: data.teacherId }),
+    ...(data.minimumAge !== undefined && { minimumAge: data.minimumAge }),
+    ...(data.maximumAge !== undefined && { maximumAge: data.maximumAge }),
+    ...(data.classColor !== undefined && { classColor: data.classColor }),
+    ...(data.limitCapacity !== undefined && { limitCapacity: data.limitCapacity }),
+    ...(data.capacity !== undefined && { capacity: data.capacity }),
+    ...(data.allowPortalBooking !== undefined && { allowPortalBooking: data.allowPortalBooking }),
+    ...(data.familyPortalTrial !== undefined && { familyPortalTrial: data.familyPortalTrial }),
+    ...(data.globalClassDiscount !== undefined && {
+      globalClassDiscount: data.globalClassDiscount,
+    }),
+    ...(data.siblingDiscount !== undefined && { siblingDiscount: data.siblingDiscount }),
+    ...(data.classType && { classType: data.classType }),
+    ...(data.termId !== undefined && { termId: data.termId }),
+  }
+}
+
 export async function updateClass(id: number, data: UpdateClassData) {
   const classItem = await prisma.class.findUnique({
     where: { id },
@@ -159,34 +191,7 @@ export async function updateClass(id: number, data: UpdateClassData) {
 
   return prisma.class.update({
     where: { id },
-    data: {
-      ...(data.title && { title: data.title }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.startDate && { startDate: new Date(data.startDate) }),
-      ...(data.endDate && { endDate: new Date(data.endDate) }),
-      ...(data.frequency && { frequency: data.frequency }),
-      ...(data.recurringDay !== undefined && { recurringDay: data.recurringDay }),
-      ...(data.startTimeOfClass && { startTimeOfClass: data.startTimeOfClass }),
-      ...(data.endTimeOfClass !== undefined && { endTimeOfClass: data.endTimeOfClass }),
-      ...(data.duration && { duration: data.duration }),
-      ...(data.pricingPerLesson && { pricingPerLesson: data.pricingPerLesson }),
-      ...(data.classImage !== undefined && { classImage: data.classImage }),
-      ...(data.locationId !== undefined && { locationId: data.locationId }),
-      ...(data.teacherId !== undefined && { teacherId: data.teacherId }),
-      ...(data.minimumAge !== undefined && { minimumAge: data.minimumAge }),
-      ...(data.maximumAge !== undefined && { maximumAge: data.maximumAge }),
-      ...(data.classColor !== undefined && { classColor: data.classColor }),
-      ...(data.limitCapacity !== undefined && { limitCapacity: data.limitCapacity }),
-      ...(data.capacity !== undefined && { capacity: data.capacity }),
-      ...(data.allowPortalBooking !== undefined && { allowPortalBooking: data.allowPortalBooking }),
-      ...(data.familyPortalTrial !== undefined && { familyPortalTrial: data.familyPortalTrial }),
-      ...(data.globalClassDiscount !== undefined && {
-        globalClassDiscount: data.globalClassDiscount,
-      }),
-      ...(data.siblingDiscount !== undefined && { siblingDiscount: data.siblingDiscount }),
-      ...(data.classType && { classType: data.classType }),
-      ...(data.termId !== undefined && { termId: data.termId }),
-    },
+    data: buildClassUpdateData(data),
     include: {
       location: true,
       teacher: true,

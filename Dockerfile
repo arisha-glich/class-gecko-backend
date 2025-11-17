@@ -1,53 +1,51 @@
-# Use Bun image as base
-FROM oven/bun:1.2-slim AS base
+# Build stage
+FROM oven/bun:1-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json and bun.lockb (if exists) for dependency installation
-COPY package.json ./
-COPY bun.lockb* ./
+# Copy package files
+COPY package.json bun.lock ./
 
-# Install dependencies
-RUN bun install --frozen-lockfile --production=false
-
-# Build stage
-FROM base AS build
-
-# Copy Prisma schema first
-COPY prisma ./prisma
-
-# Generate Prisma client
-RUN bun run db:generate
+# Install all dependencies
+RUN bun install --frozen-lockfile
 
 # Copy source code
-COPY src ./src
-COPY tsconfig.json* ./
+COPY . .
 
-# Build the application
-RUN bun run build
+# Generate Prisma client
+RUN bunx prisma generate
 
-# Production stage
-FROM oven/bun:1.2-slim AS production
+# Build the application (skip linting for minimal build)
+RUN bun build src/index.ts --outdir=dist --target=bun
 
-# Set working directory
+# Production stage with Bun Alpine (minimal and fast)
+FROM oven/bun:1-alpine AS production
+
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
+
+# Create non-root user
+RUN addgroup -g 1001 -S bungroup && adduser -S bunuser -u 1001 -G bungroup
+
 WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 bunjs
-RUN adduser --system --uid 1001 bunjs
+# Copy built application and dependencies
+COPY --from=builder --chown=bunuser:bungroup /app/dist ./dist
+COPY --from=builder --chown=bunuser:bungroup /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=bunuser:bungroup /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder --chown=bunuser:bungroup /app/package.json ./package.json
+COPY --from=builder --chown=bunuser:bungroup /app/bun.lock ./
+COPY --from=builder --chown=bunuser:bungroup /app/prisma ./prisma
 
-# Copy only the built application
-COPY --from=build --chown=bunjs:bunjs /app/dist ./dist
+# Install production dependencies (includes Prisma CLI)
+RUN bun install --production
 
 # Switch to non-root user
-USER bunjs
+USER bunuser
 
-# Expose port (adjust if your app uses a different port)
-EXPOSE 3000
-
-# Set environment to production
 ENV NODE_ENV=production
+# Expose port
+EXPOSE 8080
 
-# Run the bundled application
-CMD ["bun", "dist/index.js"]
+# Start the application with Bun (faster than Node.js)
+CMD ["bun", "run", "dist/index.js"]

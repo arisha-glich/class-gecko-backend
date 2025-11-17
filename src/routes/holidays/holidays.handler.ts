@@ -1,7 +1,7 @@
 import * as HttpStatusCodes from 'stoker/http-status-codes'
 import type { HOLIDAYS_ROUTES } from '~/routes/holidays/holidays.routes'
-import type { HandlerMapFromRoutes } from '~/types'
 import * as holidaysService from '~/services/holidays.service'
+import type { HandlerMapFromRoutes } from '~/types'
 
 export const HOLIDAYS_HANDLER: HandlerMapFromRoutes<typeof HOLIDAYS_ROUTES> = {
   createHoliday: async c => {
@@ -26,10 +26,7 @@ export const HOLIDAYS_HANDLER: HandlerMapFromRoutes<typeof HOLIDAYS_ROUTES> = {
       )
     } catch (error) {
       console.error('Error creating holiday:', error)
-      return c.json(
-        { message: 'Failed to create holiday' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to create holiday' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -51,10 +48,7 @@ export const HOLIDAYS_HANDLER: HandlerMapFromRoutes<typeof HOLIDAYS_ROUTES> = {
       )
     } catch (error) {
       console.error('Error fetching holidays:', error)
-      return c.json(
-        { message: 'Failed to fetch holidays' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to fetch holidays' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -80,10 +74,7 @@ export const HOLIDAYS_HANDLER: HandlerMapFromRoutes<typeof HOLIDAYS_ROUTES> = {
       )
     } catch (error) {
       console.error('Error fetching holiday:', error)
-      return c.json(
-        { message: 'Failed to fetch holiday' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to fetch holiday' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -110,10 +101,7 @@ export const HOLIDAYS_HANDLER: HandlerMapFromRoutes<typeof HOLIDAYS_ROUTES> = {
       )
     } catch (error) {
       console.error('Error updating holiday:', error)
-      return c.json(
-        { message: 'Failed to update holiday' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to update holiday' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 
@@ -138,11 +126,7 @@ export const HOLIDAYS_HANDLER: HandlerMapFromRoutes<typeof HOLIDAYS_ROUTES> = {
       )
     } catch (error) {
       console.error('Error deleting holiday:', error)
-      return c.json(
-        { message: 'Failed to delete holiday' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to delete holiday' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 }
-

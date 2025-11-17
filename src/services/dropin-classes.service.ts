@@ -83,6 +83,39 @@ export async function getDropInClassById(id: number, userId: string) {
   })
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Data mapping function with many optional fields
+function buildDropInClassUpdateData(data: UpdateDropInClassData) {
+  return {
+    ...(data.title !== undefined && { title: data.title }),
+    ...(data.description !== undefined && { description: data.description }),
+    ...(data.startDate && { startDate: new Date(data.startDate) }),
+    ...(data.endDate && { endDate: new Date(data.endDate) }),
+    ...(data.frequency && { frequency: data.frequency }),
+    ...(data.recurringDay !== undefined && { recurringDay: data.recurringDay }),
+    ...(data.startTimeOfClass !== undefined && { startTimeOfClass: data.startTimeOfClass }),
+    ...(data.endTimeOfClass !== undefined && { endTimeOfClass: data.endTimeOfClass }),
+    ...(data.duration !== undefined && { duration: data.duration }),
+    ...(data.pricingPerLesson !== undefined && { pricingPerLesson: data.pricingPerLesson }),
+    ...(data.classImage !== undefined && { classImage: data.classImage }),
+    ...(data.locationId !== undefined && { locationId: data.locationId }),
+    ...(data.teacherId !== undefined && { teacherId: data.teacherId }),
+    ...(data.minimumAge !== undefined && { minimumAge: data.minimumAge }),
+    ...(data.maximumAge !== undefined && { maximumAge: data.maximumAge }),
+    ...(data.classColor !== undefined && { classColor: data.classColor }),
+    ...(data.limitCapacity !== undefined && { limitCapacity: data.limitCapacity }),
+    ...(data.capacity !== undefined && { capacity: data.capacity }),
+    ...(data.allowPortalBooking !== undefined && {
+      allowPortalBooking: data.allowPortalBooking,
+    }),
+    ...(data.familyPortalTrial !== undefined && { familyPortalTrial: data.familyPortalTrial }),
+    ...(data.globalClassDiscount !== undefined && {
+      globalClassDiscount: data.globalClassDiscount,
+    }),
+    ...(data.siblingDiscount !== undefined && { siblingDiscount: data.siblingDiscount }),
+    ...(data.classType !== undefined && { classType: data.classType }),
+  }
+}
+
 export async function updateDropInClass(id: number, userId: string, data: UpdateDropInClassData) {
   const existing = await prisma.dropInClass.findFirst({
     where: { id, userId },
@@ -95,35 +128,7 @@ export async function updateDropInClass(id: number, userId: string, data: Update
 
   const updated = await prisma.dropInClass.update({
     where: { id },
-    data: {
-      ...(data.title !== undefined && { title: data.title }),
-      ...(data.description !== undefined && { description: data.description }),
-      ...(data.startDate && { startDate: new Date(data.startDate) }),
-      ...(data.endDate && { endDate: new Date(data.endDate) }),
-      ...(data.frequency && { frequency: data.frequency }),
-      ...(data.recurringDay !== undefined && { recurringDay: data.recurringDay }),
-      ...(data.startTimeOfClass !== undefined && { startTimeOfClass: data.startTimeOfClass }),
-      ...(data.endTimeOfClass !== undefined && { endTimeOfClass: data.endTimeOfClass }),
-      ...(data.duration !== undefined && { duration: data.duration }),
-      ...(data.pricingPerLesson !== undefined && { pricingPerLesson: data.pricingPerLesson }),
-      ...(data.classImage !== undefined && { classImage: data.classImage }),
-      ...(data.locationId !== undefined && { locationId: data.locationId }),
-      ...(data.teacherId !== undefined && { teacherId: data.teacherId }),
-      ...(data.minimumAge !== undefined && { minimumAge: data.minimumAge }),
-      ...(data.maximumAge !== undefined && { maximumAge: data.maximumAge }),
-      ...(data.classColor !== undefined && { classColor: data.classColor }),
-      ...(data.limitCapacity !== undefined && { limitCapacity: data.limitCapacity }),
-      ...(data.capacity !== undefined && { capacity: data.capacity }),
-      ...(data.allowPortalBooking !== undefined && {
-        allowPortalBooking: data.allowPortalBooking,
-      }),
-      ...(data.familyPortalTrial !== undefined && { familyPortalTrial: data.familyPortalTrial }),
-      ...(data.globalClassDiscount !== undefined && {
-        globalClassDiscount: data.globalClassDiscount,
-      }),
-      ...(data.siblingDiscount !== undefined && { siblingDiscount: data.siblingDiscount }),
-      ...(data.classType !== undefined && { classType: data.classType }),
-    },
+    data: buildDropInClassUpdateData(data),
     include: includeConfig,
   })
 

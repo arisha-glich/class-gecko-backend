@@ -138,4 +138,3 @@ export const WAIVERS_POLICIES_ROUTES = {
 }
 
 export type WaiversPoliciesRoutes = typeof WAIVERS_POLICIES_ROUTES
-

@@ -136,4 +136,3 @@ export const HOLIDAYS_ROUTES = {
 }
 
 export type HolidaysRoutes = typeof HOLIDAYS_ROUTES
-

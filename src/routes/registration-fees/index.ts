@@ -3,26 +3,8 @@ import { REGISTRATION_FEES_HANDLER } from '~/routes/registration-fees/registrati
 import { REGISTRATION_FEES_ROUTES } from '~/routes/registration-fees/registration-fees.routes'
 
 const router = createRouter()
-  .openapi(
-    REGISTRATION_FEES_ROUTES.createRegistrationFee,
-    REGISTRATION_FEES_HANDLER.createRegistrationFee
-  )
-  .openapi(
-    REGISTRATION_FEES_ROUTES.getRegistrationFees,
-    REGISTRATION_FEES_HANDLER.getRegistrationFees
-  )
-  .openapi(
-    REGISTRATION_FEES_ROUTES.getRegistrationFee,
-    REGISTRATION_FEES_HANDLER.getRegistrationFee
-  )
-  .openapi(
-    REGISTRATION_FEES_ROUTES.updateRegistrationFee,
-    REGISTRATION_FEES_HANDLER.updateRegistrationFee
-  )
-  .openapi(
-    REGISTRATION_FEES_ROUTES.deleteRegistrationFee,
-    REGISTRATION_FEES_HANDLER.deleteRegistrationFee
-  )
+Object.entries(REGISTRATION_FEES_ROUTES).forEach(([key, route]) => {
+  router.openapi(route, REGISTRATION_FEES_HANDLER[key as keyof typeof REGISTRATION_FEES_HANDLER])
+})
 
 export default router
-

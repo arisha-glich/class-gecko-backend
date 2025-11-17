@@ -128,4 +128,3 @@ export const LOCATIONS_ROUTES = {
 }
 
 export type LocationsRoutes = typeof LOCATIONS_ROUTES
-

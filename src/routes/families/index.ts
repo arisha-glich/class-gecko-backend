@@ -3,9 +3,8 @@ import { FAMILIES_HANDLER } from '~/routes/families/families.handler'
 import { FAMILIES_ROUTES } from '~/routes/families/families.routes'
 
 const router = createRouter()
-  .openapi(FAMILIES_ROUTES.createFamily, FAMILIES_HANDLER.createFamily)
-  .openapi(FAMILIES_ROUTES.getFamilies, FAMILIES_HANDLER.getFamilies)
-  .openapi(FAMILIES_ROUTES.getFamily, FAMILIES_HANDLER.getFamily)
-  .openapi(FAMILIES_ROUTES.createStudent, FAMILIES_HANDLER.createStudent)
+Object.entries(FAMILIES_ROUTES).forEach(([key, route]) => {
+  router.openapi(route, FAMILIES_HANDLER[key as keyof typeof FAMILIES_HANDLER])
+})
 
 export default router
