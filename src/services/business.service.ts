@@ -61,10 +61,10 @@ export interface BusinessDetailResult {
   website: string | null
   status: string
   statistics: {
-    students: number
-    teachers: number
-    revenue: number
-    profit: number
+    totalStudents: number
+    activeClasses: number
+    totalRevenue: number
+    earnedCommission: number
   }
   contactInfo: {
     email: string
@@ -172,7 +172,8 @@ export async function getBusinessById(id: number): Promise<BusinessDetailResult 
   }
 
   // Get statistics
-  const [studentsCount, teachersCount] = await Promise.all([
+  const now = new Date()
+  const [totalStudents, activeClasses] = await Promise.all([
     prisma.student.count({
       where: {
         family: {
@@ -180,12 +181,13 @@ export async function getBusinessById(id: number): Promise<BusinessDetailResult 
         },
       },
     }),
-    prisma.teacher.count({
+    prisma.class.count({
       where: {
-        OR: [
-          { classes: { some: { term: { userId: business.userId } } } },
-          { dropInClasses: { some: { userId: business.userId } } },
-        ],
+        term: {
+          userId: business.userId,
+        },
+        startDate: { lte: now },
+        endDate: { gte: now },
       },
     }),
   ])
@@ -213,40 +215,40 @@ export async function getBusinessById(id: number): Promise<BusinessDetailResult 
     },
   })
 
-  const revenue = orders.reduce((sum, order) => {
+  const totalRevenue = orders.reduce((sum, order) => {
     return sum + (order.cart?.amount || 0)
   }, 0)
 
-  // For profit, subtract commission (simplified calculation)
+  // Calculate earned commission
   const activeCommission = business.commissions[0]
-  const commissionAmount = activeCommission
+  const earnedCommission = activeCommission
     ? activeCommission.commissionType === 'PERCENTAGE'
-      ? (revenue * activeCommission.commissionValue) / 100
+      ? (totalRevenue * activeCommission.commissionValue) / 100
       : activeCommission.commissionValue
     : 0
-  const profit = revenue - commissionAmount
 
-  const address = business.user.address
+  // Use business address if available, otherwise construct from user address
+  const address = business.address || (business.user.address
     ? `${business.user.address.street}, ${business.user.address.city}, ${business.user.address.state} ${business.user.address.zipcode}, ${business.user.address.country}`
-    : null
+    : null)
 
   return {
     id: business.id,
     schoolName: business.companyName,
-    email: business.user.email,
-    phone: business.user.phoneNo || '',
+    email: business.contactEmail || business.user.email,
+    phone: business.contactPhone || business.user.phoneNo || '',
     address,
     website: null, // Add website field to schema if needed
     status: business.user.banned ? 'Inactive' : 'Active',
     statistics: {
-      students: studentsCount,
-      teachers: teachersCount,
-      revenue: Math.round(revenue * 100) / 100,
-      profit: Math.round(profit * 100) / 100,
+      totalStudents: totalStudents,
+      activeClasses: activeClasses,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      earnedCommission: Math.round(earnedCommission * 100) / 100,
     },
     contactInfo: {
-      email: business.user.email,
-      phone: business.user.phoneNo || '',
+      email: business.contactEmail || business.user.email,
+      phone: business.contactPhone || business.user.phoneNo || '',
       address,
       website: null,
     },
@@ -276,12 +278,13 @@ export async function createBusiness(data: CreateBusinessInput) {
   }
 
   // Create user account for the business
+  // Store owner information in user fields (email, phoneNo, name)
   const user = await prisma.user.create({
     data: {
-      email: data.email,
-      phoneNo: data.phone,
-      name: data.schoolName,
-      role: 'ADMIN',
+      email: data.email, // ownerEmail stored in email field
+      phoneNo: data.phone, // ownerPhoneNo stored in phoneNo field
+      name: data.schoolName, // ownerName stored in name field
+      role: 'BUSINESS',
       banned: !(data.status ?? true),
     },
   })
@@ -291,6 +294,9 @@ export async function createBusiness(data: CreateBusinessInput) {
     data: {
       userId: user.id,
       companyName: data.schoolName,
+      address: data.address,
+      contactPhone: data.phone,
+      contactEmail: data.email,
       industry: 'Education',
       language: 'en',
       currency: 'USD',
@@ -321,13 +327,14 @@ export async function createBusiness(data: CreateBusinessInput) {
   return {
     id: business.id,
     schoolName: business.companyName,
-    email: user.email,
-    phone: user.phoneNo || '',
+    email: business.contactEmail || user.email,
+    phone: business.contactPhone || user.phoneNo || '',
     status: user.banned ? 'Inactive' : 'Active',
     user: {
       id: user.id,
       email: user.email,
       phoneNo: user.phoneNo,
+      name: user.name,
     },
   }
 }
@@ -359,22 +366,40 @@ export async function updateBusiness(id: number, data: UpdateBusinessInput) {
     where: { id },
     data: {
       ...(data.schoolName && { companyName: data.schoolName }),
+      ...(data.address !== undefined && { address: data.address }),
+      ...(data.phone && { contactPhone: data.phone }),
+      ...(data.email && { contactEmail: data.email }),
+    },
+  })
+
+  // Get updated user data
+  const updatedUser = await prisma.user.findUnique({
+    where: { id: business.userId },
+    select: {
+      email: true,
+      phoneNo: true,
+      banned: true,
     },
   })
 
   return {
     id: updatedBusiness.id,
     schoolName: updatedBusiness.companyName,
-    email: business.user.email,
-    phone: business.user.phoneNo || '',
+    email: updatedUser?.email || business.user.email,
+    phone: updatedUser?.phoneNo || business.user.phoneNo || '',
     status:
       data.status !== undefined
         ? data.status
           ? 'Active'
           : 'Inactive'
-        : business.user.banned
+        : updatedUser?.banned ?? business.user.banned
           ? 'Inactive'
           : 'Active',
+    user: {
+      id: business.userId,
+      email: updatedUser?.email || business.user.email,
+      phoneNo: updatedUser?.phoneNo || business.user.phoneNo,
+    },
   }
 }
 

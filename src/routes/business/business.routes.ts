@@ -36,10 +36,10 @@ export const BusinessDetailSchema = z.object({
   website: z.string().nullable(),
   status: z.string(),
   statistics: z.object({
-    students: z.number().int(),
-    teachers: z.number().int(),
-    revenue: z.number(),
-    profit: z.number(),
+    totalStudents: z.number().int(),
+    activeClasses: z.number().int(),
+    totalRevenue: z.number(),
+    earnedCommission: z.number(),
   }),
   contactInfo: z.object({
     email: z.string().email(),
@@ -55,6 +55,7 @@ export const BusinessDetailSchema = z.object({
     .nullable(),
   user: z.object({
     id: z.string(),
+    name:z.string(),
     email: z.string().email(),
     phoneNo: z.string().nullable(),
   }),
