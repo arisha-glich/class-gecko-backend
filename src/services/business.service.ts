@@ -49,6 +49,7 @@ export interface BusinessListResult {
     id: string
     email: string
     phoneNo: string | null
+    name:string
   }
 }
 
@@ -336,6 +337,7 @@ export async function createBusiness(data: CreateBusinessInput) {
       phoneNo: user.phoneNo,
       name: user.name,
     },
+    
   }
 }
 
