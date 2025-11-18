@@ -177,7 +177,8 @@ export async function getFamilies(
   return {
     data: families.map(family => ({
       id: family.id,
-      familyName: family.familyName || `${family.primaryParentFirstName} ${family.primaryParentLastName}`,
+      familyName:
+        family.familyName || `${family.primaryParentFirstName} ${family.primaryParentLastName}`,
       email: family.primaryParentEmail,
       phone: family.primaryParentPhoneNumber
         ? `${family.primaryParentPhoneCountry || ''} ${family.primaryParentPhoneNumber}`.trim()
@@ -285,11 +286,7 @@ export async function getFamilyById(id: number, organizationId: string) {
   }
 }
 
-export async function updateFamily(
-  id: number,
-  organizationId: string,
-  data: UpdateFamilyInput
-) {
+export async function updateFamily(id: number, organizationId: string, data: UpdateFamilyInput) {
   const family = await prisma.family.findFirst({
     where: { id, organizationId },
     include: { account: true },
@@ -320,7 +317,8 @@ export async function updateFamily(
   const userUpdateData: any = {}
   if (data.email) userUpdateData.email = data.email
   if (data.firstName || data.lastName) {
-    userUpdateData.name = `${data.firstName || family.primaryParentFirstName} ${data.lastName || family.primaryParentLastName}`.trim()
+    userUpdateData.name =
+      `${data.firstName || family.primaryParentFirstName} ${data.lastName || family.primaryParentLastName}`.trim()
   }
   if (data.phoneNumber) {
     userUpdateData.phoneNo = `${data.phoneCountryCode || ''} ${data.phoneNumber}`.trim()
@@ -569,9 +567,7 @@ export async function getFamilyPayments(id: number, organizationId: string) {
     }
   })
 
-  const totalPaid = invoices
-    .filter(i => i.status === 'Paid')
-    .reduce((sum, i) => sum + i.amount, 0)
+  const totalPaid = invoices.filter(i => i.status === 'Paid').reduce((sum, i) => sum + i.amount, 0)
   const totalInvoices = invoices.length
   const due = invoices.filter(i => i.status === 'Pending').reduce((sum, i) => sum + i.amount, 0)
 

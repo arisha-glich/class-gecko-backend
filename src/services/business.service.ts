@@ -49,7 +49,7 @@ export interface BusinessListResult {
     id: string
     email: string
     phoneNo: string | null
-    name:string
+    name: string
   }
 }
 
@@ -229,9 +229,11 @@ export async function getBusinessById(id: number): Promise<BusinessDetailResult 
     : 0
 
   // Use business address if available, otherwise construct from user address
-  const address = business.address || (business.user.address
-    ? `${business.user.address.street}, ${business.user.address.city}, ${business.user.address.state} ${business.user.address.zipcode}, ${business.user.address.country}`
-    : null)
+  const address =
+    business.address ||
+    (business.user.address
+      ? `${business.user.address.street}, ${business.user.address.city}, ${business.user.address.state} ${business.user.address.zipcode}, ${business.user.address.country}`
+      : null)
 
   return {
     id: business.id,
@@ -337,7 +339,6 @@ export async function createBusiness(data: CreateBusinessInput) {
       phoneNo: user.phoneNo,
       name: user.name,
     },
-    
   }
 }
 
@@ -394,7 +395,7 @@ export async function updateBusiness(id: number, data: UpdateBusinessInput) {
         ? data.status
           ? 'Active'
           : 'Inactive'
-        : updatedUser?.banned ?? business.user.banned
+        : (updatedUser?.banned ?? business.user.banned)
           ? 'Inactive'
           : 'Active',
     user: {

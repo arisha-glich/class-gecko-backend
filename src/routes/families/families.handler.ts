@@ -99,10 +99,7 @@ export const FAMILIES_HANDLER: HandlerMapFromRoutes<typeof FAMILIES_ROUTES> = {
       )
     } catch (error) {
       console.error('Error fetching family:', error)
-      return c.json(
-        { message: 'Failed to retrieve family' },
-        HttpStatusCodes.INTERNAL_SERVER_ERROR
-      )
+      return c.json({ message: 'Failed to retrieve family' }, HttpStatusCodes.INTERNAL_SERVER_ERROR)
     }
   },
 

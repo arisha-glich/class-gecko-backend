@@ -76,11 +76,17 @@ export const FamilyQuerySchema = z.object({
   search: z
     .string()
     .optional()
-    .openapi({ param: { name: 'search', in: 'query' }, description: 'Search by family name, email, or phone' }),
+    .openapi({
+      param: { name: 'search', in: 'query' },
+      description: 'Search by family name, email, or phone',
+    }),
   status: z
     .string()
     .optional()
-    .openapi({ param: { name: 'status', in: 'query' }, description: 'Filter by status (ACTIVE, INACTIVE, ALL)' }),
+    .openapi({
+      param: { name: 'status', in: 'query' },
+      description: 'Filter by status (ACTIVE, INACTIVE, ALL)',
+    }),
   page: z
     .string()
     .optional()
@@ -92,15 +98,17 @@ export const FamilyQuerySchema = z.object({
 })
 
 export const FamilyListResponseSchema = z.object({
-  data: z.array(z.object({
-    id: z.number(),
-    familyName: z.string(),
-    email: z.string(),
-    phone: z.string(),
-    students: z.number(),
-    status: z.string(),
-    createdAt: z.string(),
-  })),
+  data: z.array(
+    z.object({
+      id: z.number(),
+      familyName: z.string(),
+      email: z.string(),
+      phone: z.string(),
+      students: z.number(),
+      status: z.string(),
+      createdAt: z.string(),
+    })
+  ),
   pagination: z.object({
     page: z.number(),
     limit: z.number(),
@@ -125,19 +133,23 @@ export const FamilyDetailResponseSchema = z.object({
     phone: z.string(),
     linkedBusiness: z.string(),
   }),
-  address: z.object({
-    street: z.string(),
-    city: z.string(),
-    state: z.string(),
-    zipcode: z.string(),
-    country: z.string(),
-  }).nullable(),
-  emergencyContact: z.object({
-    name: z.string(),
-    relation: z.string().nullable(),
-    phone: z.string().nullable(),
-    email: z.string().nullable(),
-  }).nullable(),
+  address: z
+    .object({
+      street: z.string(),
+      city: z.string(),
+      state: z.string(),
+      zipcode: z.string(),
+      country: z.string(),
+    })
+    .nullable(),
+  emergencyContact: z
+    .object({
+      name: z.string(),
+      relation: z.string().nullable(),
+      phone: z.string().nullable(),
+      email: z.string().nullable(),
+    })
+    .nullable(),
   user: z.object({
     id: z.string(),
     email: z.string(),
@@ -156,20 +168,24 @@ export const UpdateFamilyBodySchema = z
     familyName: z.string().optional(),
     status: z.string().optional(),
     notes: z.string().optional(),
-    address: z.object({
-      street: z.string().optional(),
-      city: z.string().optional(),
-      state: z.string().optional(),
-      zipcode: z.string().optional(),
-      country: z.string().optional(),
-    }).optional(),
-    emergencyContact: z.object({
-      name: z.string().optional(),
-      relation: z.string().optional(),
-      phoneNo: z.string().optional(),
-      email: z.string().email().optional(),
-      useInEmergency: z.boolean().optional(),
-    }).optional(),
+    address: z
+      .object({
+        street: z.string().optional(),
+        city: z.string().optional(),
+        state: z.string().optional(),
+        zipcode: z.string().optional(),
+        country: z.string().optional(),
+      })
+      .optional(),
+    emergencyContact: z
+      .object({
+        name: z.string().optional(),
+        relation: z.string().optional(),
+        phoneNo: z.string().optional(),
+        email: z.string().email().optional(),
+        useInEmergency: z.boolean().optional(),
+      })
+      .optional(),
   })
   .openapi({ description: 'Payload to update a family' })
 
@@ -179,19 +195,23 @@ export const SuspendFamilyBodySchema = z
   })
   .openapi({ description: 'Payload to suspend/activate a family' })
 
-export const FamilyChildrenResponseSchema = z.array(z.object({
-  id: z.number(),
-  firstName: z.string(),
-  lastName: z.string(),
-  dateOfBirth: z.string().nullable(),
-  age: z.number().nullable(),
-  overallStatus: z.string(),
-  enrolledClasses: z.array(z.object({
+export const FamilyChildrenResponseSchema = z.array(
+  z.object({
     id: z.number(),
-    title: z.string(),
-    classType: z.string(),
-  })),
-}))
+    firstName: z.string(),
+    lastName: z.string(),
+    dateOfBirth: z.string().nullable(),
+    age: z.number().nullable(),
+    overallStatus: z.string(),
+    enrolledClasses: z.array(
+      z.object({
+        id: z.number(),
+        title: z.string(),
+        classType: z.string(),
+      })
+    ),
+  })
+)
 
 export const FamilyPaymentsResponseSchema = z.object({
   summary: z.object({
@@ -199,13 +219,15 @@ export const FamilyPaymentsResponseSchema = z.object({
     totalInvoices: z.number(),
     due: z.number(),
   }),
-  invoices: z.array(z.object({
-    invoiceId: z.string(),
-    date: z.string(),
-    description: z.string(),
-    amount: z.number(),
-    status: z.string(),
-  })),
+  invoices: z.array(
+    z.object({
+      invoiceId: z.string(),
+      date: z.string(),
+      description: z.string(),
+      amount: z.number(),
+      status: z.string(),
+    })
+  ),
 })
 
 export const FAMILIES_ROUTES = {
@@ -258,7 +280,8 @@ export const FAMILIES_ROUTES = {
     tags: ['Families'],
     path: '/{id}',
     summary: 'Get family details by ID',
-    description: 'Retrieves detailed information about a specific family including contact info, address, and emergency contact',
+    description:
+      'Retrieves detailed information about a specific family including contact info, address, and emergency contact',
     request: { params: FamilyParamsSchema },
     responses: {
       [HttpStatusCodes.OK]: jsonContent(
@@ -279,7 +302,8 @@ export const FAMILIES_ROUTES = {
     tags: ['Families'],
     path: '/{id}',
     summary: 'Update family information',
-    description: 'Updates family details including contact information, address, and emergency contact',
+    description:
+      'Updates family details including contact information, address, and emergency contact',
     request: {
       params: FamilyParamsSchema,
       body: jsonContentRequired(UpdateFamilyBodySchema, 'Family update payload'),
@@ -349,7 +373,8 @@ export const FAMILIES_ROUTES = {
     tags: ['Families'],
     path: '/{id}/children',
     summary: 'Get family children with enrolled classes',
-    description: 'Retrieves all children belonging to a family along with their enrolled classes and status',
+    description:
+      'Retrieves all children belonging to a family along with their enrolled classes and status',
     request: { params: FamilyParamsSchema },
     responses: {
       [HttpStatusCodes.OK]: jsonContent(

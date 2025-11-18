@@ -55,7 +55,7 @@ export const BusinessDetailSchema = z.object({
     .nullable(),
   user: z.object({
     id: z.string(),
-    name:z.string(),
+    name: z.string(),
     email: z.string().email(),
     phoneNo: z.string().nullable(),
   }),
