@@ -1,6 +1,7 @@
 import businessRouter from '~/routes/business'
 import campsRouter from '~/routes/camps'
 import classesRouter from '~/routes/classes'
+import commissionsRouter from '~/routes/commissions'
 import customFieldsRouter from '~/routes/custom-fields'
 import discountsRouter from '~/routes/discounts'
 import dropInBookingsRouter from '~/routes/dropin-bookings'
@@ -25,6 +26,7 @@ export function registerRoutes(app: AppOpenAPI) {
   app.route('/test', router)
   app.route('/organization', organizationRouter)
   app.route('/business', businessRouter)
+  app.route('/commissions', commissionsRouter)
   app.route('/terms', termsRouter)
   app.route('/camps', campsRouter)
   app.route('/dropin-classes', dropInClassesRouter)

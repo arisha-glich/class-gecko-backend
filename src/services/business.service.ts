@@ -18,8 +18,14 @@ export interface CreateBusinessInput {
   phone: string
   address?: string
   website?: string
+  // Owner Information
+  ownerName: string
+  ownerEmail: string
+  ownerPhone: string
+  ownerAddress?: string
+  // Commission
   commissionType: 'PERCENTAGE' | 'FIXED' | 'TIERED'
-  commissionValue: number
+  commissionValue: number | null
   status?: boolean
 }
 
@@ -34,7 +40,7 @@ export interface UpdateBusinessInput {
 
 export interface UpdateCommissionInput {
   commissionType: 'PERCENTAGE' | 'FIXED' | 'TIERED'
-  commissionValue: number
+  commissionValue: number | null
   country?: string
   currency?: string
 }
@@ -42,15 +48,10 @@ export interface UpdateCommissionInput {
 export interface BusinessListResult {
   id: number
   schoolName: string
-  email: string
-  phone: string
+  location: string | null
+  ownership: string | null // Owner name
+  registered: Date // Registration date
   status: string
-  user: {
-    id: string
-    email: string
-    phoneNo: string | null
-    name: string
-  }
 }
 
 export interface BusinessDetailResult {
@@ -61,6 +62,14 @@ export interface BusinessDetailResult {
   address: string | null
   website: string | null
   status: string
+  registered: Date
+  userId: string // Business owner's User ID - use this as organizationId when creating families
+  owner: {
+    name: string | null
+    email: string
+    phone: string | null
+    address: string | null
+  }
   statistics: {
     totalStudents: number
     activeClasses: number
@@ -75,13 +84,9 @@ export interface BusinessDetailResult {
   }
   commission: {
     commissionType: string
-    commissionValue: number
+    commissionValue: number | null
+    isGlobal?: boolean
   } | null
-  user: {
-    id: string
-    email: string
-    phoneNo: string | null
-  }
 }
 
 export async function getBusinesses(search?: string, page = 1, limit = 10) {
@@ -106,9 +111,19 @@ export async function getBusinesses(search?: string, page = 1, limit = 10) {
         user: {
           select: {
             id: true,
+            name: true,
             email: true,
             phoneNo: true,
             banned: true,
+            address: {
+              select: {
+                street: true,
+                city: true,
+                state: true,
+                zipcode: true,
+                country: true,
+              },
+            },
           },
         },
       },
@@ -118,18 +133,22 @@ export async function getBusinesses(search?: string, page = 1, limit = 10) {
   ])
 
   return {
-    data: businesses.map(business => ({
-      id: business.id,
-      schoolName: business.companyName,
-      email: business.user.email,
-      phone: business.user.phoneNo || '',
-      status: business.user.banned ? 'Inactive' : 'Active',
-      user: {
-        id: business.user.id,
-        email: business.user.email,
-        phoneNo: business.user.phoneNo,
-      },
-    })),
+    data: businesses.map(business => {
+      const location =
+        business.address ||
+        (business.user.address
+          ? `${business.user.address.city}, ${business.user.address.state}`
+          : null)
+
+      return {
+        id: business.id,
+        schoolName: business.companyName,
+        location,
+        ownership: business.user.name || null,
+        registered: business.createdAt,
+        status: business.user.banned ? 'Inactive' : 'Active',
+      }
+    }),
     pagination: {
       page,
       limit,
@@ -146,6 +165,7 @@ export async function getBusinessById(id: number): Promise<BusinessDetailResult 
       user: {
         select: {
           id: true,
+          name: true,
           email: true,
           phoneNo: true,
           banned: true,
@@ -221,12 +241,36 @@ export async function getBusinessById(id: number): Promise<BusinessDetailResult 
   }, 0)
 
   // Calculate earned commission
-  const activeCommission = business.commissions[0]
+  // First check for organization-specific commission, then fall back to global
+  let activeCommission = business.commissions[0] // Organization-specific commission
+  let isGlobalCommission = false
+
+  // If no organization-specific commission, get global commission
+  if (!activeCommission) {
+    // Use proper Prisma null filter syntax for nullable field
+    // biome-ignore lint/suspicious/noExplicitAny: Prisma nullable field query requires type assertion
+    const globalCommission = await prisma.commission.findFirst({
+      where: {
+        businessId: null as any,
+        country: 'US', // Default country, can be made dynamic
+        currency: 'USD', // Default currency, can be made dynamic
+        isActive: true,
+      },
+      orderBy: {
+        effectiveFrom: 'desc',
+      },
+    })
+    if (globalCommission) {
+      activeCommission = globalCommission
+      isGlobalCommission = true
+    }
+  }
+
   const earnedCommission = activeCommission
     ? activeCommission.commissionType === 'PERCENTAGE'
       ? (totalRevenue * activeCommission.commissionValue) / 100
       : activeCommission.commissionValue
-    : 0
+    : null
 
   // Use business address if available, otherwise construct from user address
   const address =
@@ -235,19 +279,33 @@ export async function getBusinessById(id: number): Promise<BusinessDetailResult 
       ? `${business.user.address.street}, ${business.user.address.city}, ${business.user.address.state} ${business.user.address.zipcode}, ${business.user.address.country}`
       : null)
 
+  // Owner address
+  const ownerAddress = business.user.address
+    ? `${business.user.address.street}, ${business.user.address.city}, ${business.user.address.state} ${business.user.address.zipcode}, ${business.user.address.country}`
+    : null
+
   return {
     id: business.id,
     schoolName: business.companyName,
     email: business.contactEmail || business.user.email,
     phone: business.contactPhone || business.user.phoneNo || '',
     address,
-    website: null, // Add website field to schema if needed
+    website: null,
     status: business.user.banned ? 'Inactive' : 'Active',
+    registered: business.createdAt,
+    owner: {
+      name: business.user.name,
+      email: business.user.email,
+      phone: business.user.phoneNo,
+      address: ownerAddress,
+    },
+    // Include userId for debugging - this should match family.organizationId
+    userId: business.userId,
     statistics: {
       totalStudents: totalStudents,
       activeClasses: activeClasses,
       totalRevenue: Math.round(totalRevenue * 100) / 100,
-      earnedCommission: Math.round(earnedCommission * 100) / 100,
+      earnedCommission: earnedCommission ? Math.round(earnedCommission * 100) / 100 : 0,
     },
     contactInfo: {
       email: business.contactEmail || business.user.email,
@@ -259,20 +317,16 @@ export async function getBusinessById(id: number): Promise<BusinessDetailResult 
       ? {
           commissionType: activeCommission.commissionType,
           commissionValue: activeCommission.commissionValue,
+          isGlobal: isGlobalCommission,
         }
       : null,
-    user: {
-      id: business.user.id,
-      email: business.user.email,
-      phoneNo: business.user.phoneNo,
-    },
   }
 }
 
 export async function createBusiness(data: CreateBusinessInput) {
-  // Check if email already exists
+  // Check if owner email already exists
   const existingUser = await prisma.user.findUnique({
-    where: { email: data.email },
+    where: { email: data.ownerEmail },
     select: { id: true },
   })
 
@@ -280,15 +334,31 @@ export async function createBusiness(data: CreateBusinessInput) {
     throw new EmailAlreadyUsedError()
   }
 
-  // Create user account for the business
-  // Store owner information in user fields (email, phoneNo, name)
+  // Create address for owner if provided
+  let ownerAddressId: number | undefined
+  if (data.ownerAddress) {
+    const addressParts = data.ownerAddress.split(',').map(s => s.trim())
+    const ownerAddressRecord = await prisma.address.create({
+      data: {
+        street: addressParts[0] || '',
+        city: addressParts[1] || '',
+        state: addressParts[2] || '',
+        zipcode: addressParts[3] || '',
+        country: addressParts[4] || 'US',
+      },
+    })
+    ownerAddressId = ownerAddressRecord.id
+  }
+
+  // Create user account for the business owner
   const user = await prisma.user.create({
     data: {
-      email: data.email, // ownerEmail stored in email field
-      phoneNo: data.phone, // ownerPhoneNo stored in phoneNo field
-      name: data.schoolName, // ownerName stored in name field
+      email: data.ownerEmail,
+      phoneNo: data.ownerPhone,
+      name: data.ownerName,
       role: 'BUSINESS',
       banned: !(data.status ?? true),
+      addressId: ownerAddressId,
     },
   })
 
@@ -311,21 +381,26 @@ export async function createBusiness(data: CreateBusinessInput) {
     },
   })
 
-  // Create commission setting
-  await prisma.commission.create({
-    data: {
-      businessId: business.id,
-      effectiveFrom: new Date(),
-      country: 'US',
-      currency: 'USD',
-      commissionType: data.commissionType,
-      commissionValue: data.commissionValue,
-      platformCommission: 0,
-      platformAmount: 0,
-      appliesTo: 'ALL',
-      isActive: true,
-    },
-  })
+  // Create commission setting only if commissionType and commissionValue are provided
+  // Otherwise, the business will use the global commission
+  if (data.commissionType && data.commissionValue !== null && data.commissionValue !== undefined) {
+    await prisma.commission.create({
+      data: {
+        business: {
+          connect: { id: business.id },
+        },
+        effectiveFrom: new Date(),
+        country: 'US',
+        currency: 'USD',
+        commissionType: data.commissionType,
+        commissionValue: data.commissionValue,
+        platformCommission: 0,
+        platformAmount: 0,
+        appliesTo: 'ALL',
+        isActive: true,
+      },
+    })
+  }
 
   return {
     id: business.id,
@@ -333,12 +408,19 @@ export async function createBusiness(data: CreateBusinessInput) {
     email: business.contactEmail || user.email,
     phone: business.contactPhone || user.phoneNo || '',
     status: user.banned ? 'Inactive' : 'Active',
-    user: {
-      id: user.id,
-      email: user.email,
-      phoneNo: user.phoneNo,
+    address: business.address,
+    owner: {
       name: user.name,
+      email: user.email,
+      phone: user.phoneNo,
+      address: data.ownerAddress || null,
     },
+    commission: data.commissionType && data.commissionValue !== null && data.commissionValue !== undefined
+      ? {
+          commissionType: data.commissionType,
+          commissionValue: data.commissionValue,
+        }
+      : null,
   }
 }
 
@@ -388,8 +470,8 @@ export async function updateBusiness(id: number, data: UpdateBusinessInput) {
   return {
     id: updatedBusiness.id,
     schoolName: updatedBusiness.companyName,
-    email: updatedUser?.email || business.user.email,
-    phone: updatedUser?.phoneNo || business.user.phoneNo || '',
+    email: updatedBusiness.contactEmail || updatedUser?.email || business.user.email,
+    phone: updatedBusiness.contactPhone || updatedUser?.phoneNo || business.user.phoneNo || '',
     status:
       data.status !== undefined
         ? data.status
@@ -398,11 +480,6 @@ export async function updateBusiness(id: number, data: UpdateBusinessInput) {
         : (updatedUser?.banned ?? business.user.banned)
           ? 'Inactive'
           : 'Active',
-    user: {
-      id: business.userId,
-      email: updatedUser?.email || business.user.email,
-      phoneNo: updatedUser?.phoneNo || business.user.phoneNo,
-    },
   }
 }
 
@@ -429,12 +506,14 @@ export async function updateBusinessCommission(businessId: number, data: UpdateC
   // Create new commission
   const commission = await prisma.commission.create({
     data: {
-      businessId,
+      business: {
+        connect: { id: businessId },
+      },
       effectiveFrom: new Date(),
       country: data.country || 'US',
       currency: data.currency || 'USD',
       commissionType: data.commissionType,
-      commissionValue: data.commissionValue,
+      commissionValue: data.commissionValue ?? 0,
       platformCommission: 0,
       platformAmount: 0,
       appliesTo: 'ALL',
@@ -444,7 +523,7 @@ export async function updateBusinessCommission(businessId: number, data: UpdateC
 
   return {
     commissionType: commission.commissionType,
-    commissionValue: commission.commissionValue,
+    commissionValue: commission.commissionValue ?? null as any,
   }
 }
 

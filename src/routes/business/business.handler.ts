@@ -89,8 +89,12 @@ export const BUSINESS_HANDLER: HandlerMapFromRoutes<typeof BUSINESS_ROUTES> = {
         phone: body.phone,
         address: body.address,
         website: body.website,
+        ownerName: body.ownerName,
+        ownerEmail: body.ownerEmail,
+        ownerPhone: body.ownerPhone,
+        ownerAddress: body.ownerAddress,
         commissionType: body.commissionType,
-        commissionValue: body.commissionValue,
+        commissionValue: body.commissionValue ?? null as any,
         status: body.status,
       })
 
@@ -159,7 +163,7 @@ export const BUSINESS_HANDLER: HandlerMapFromRoutes<typeof BUSINESS_ROUTES> = {
 
       const commission = await updateBusinessCommission(Number(id), {
         commissionType: body.commissionType,
-        commissionValue: body.commissionValue,
+        commissionValue: body.commissionValue ?? 0,
         country: body.country,
         currency: body.currency,
       })

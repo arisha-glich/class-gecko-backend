@@ -7,13 +7,28 @@ import { zodResponseSchema } from '~/lib/zod-helper'
 export const BusinessSchema = z.object({
   id: z.number().int(),
   schoolName: z.string(),
+  location: z.string().nullable(),
+  ownership: z.string().nullable(),
+  registered: z.string().datetime(),
+  status: z.string(),
+})
+
+export const CreateBusinessResponseSchema = z.object({
+  id: z.number().int(),
+  schoolName: z.string(),
   email: z.string().email(),
   phone: z.string(),
   status: z.string(),
-  user: z.object({
-    id: z.string(),
+  address: z.string().nullable(),
+  owner: z.object({
+    name: z.string().nullable(),
     email: z.string().email(),
-    phoneNo: z.string().nullable(),
+    phone: z.string().nullable(),
+    address: z.string().nullable(),
+  }),
+  commission: z.object({
+    commissionType: z.string(),
+    commissionValue: z.number().nullable(),
   }),
 })
 
@@ -35,6 +50,14 @@ export const BusinessDetailSchema = z.object({
   address: z.string().nullable(),
   website: z.string().nullable(),
   status: z.string(),
+  registered: z.string().datetime(),
+  userId: z.string(), // Business owner's User ID - use this as organizationId when creating families
+  owner: z.object({
+    name: z.string().nullable(),
+    email: z.string().email(),
+    phone: z.string().nullable(),
+    address: z.string().nullable(),
+  }),
   statistics: z.object({
     totalStudents: z.number().int(),
     activeClasses: z.number().int(),
@@ -50,29 +73,30 @@ export const BusinessDetailSchema = z.object({
   commission: z
     .object({
       commissionType: z.string(),
-      commissionValue: z.number(),
+      commissionValue: z.number().nullable(),
     })
     .nullable(),
-  user: z.object({
-    id: z.string(),
-    name: z.string(),
-    email: z.string().email(),
-    phoneNo: z.string().nullable(),
-  }),
 })
 
 export const CreateBusinessBodySchema = z
   .object({
+    // Basic Information
     schoolName: z.string().min(1, 'School name is required'),
     email: z.string().email('Valid email is required'),
     phone: z.string().min(1, 'Phone number is required'),
     address: z.string().optional(),
     website: z.string().url('Valid URL is required').optional().or(z.literal('')),
+    // Owner Information
+    ownerName: z.string().min(1, 'Owner name is required'),
+    ownerEmail: z.string().email('Valid owner email is required'),
+    ownerPhone: z.string().min(1, 'Owner phone number is required'),
+    ownerAddress: z.string().optional(),
+    // Commission
     commissionType: z.enum(['PERCENTAGE', 'FIXED', 'TIERED']),
-    commissionValue: z.number().min(0, 'Commission value must be non-negative'),
+    commissionValue: z.number().nullable(),
     status: z.boolean().optional().default(true),
   })
-  .openapi({ description: 'Payload to create a new business/school' })
+  .openapi({ description: 'Payload to create a new business/school with owner information' })
 
 export const UpdateBusinessBodySchema = z
   .object({
@@ -88,7 +112,7 @@ export const UpdateBusinessBodySchema = z
 export const UpdateCommissionBodySchema = z
   .object({
     commissionType: z.enum(['PERCENTAGE', 'FIXED', 'TIERED']),
-    commissionValue: z.number().min(0, 'Commission value must be non-negative'),
+    commissionValue: z.number().nullable(),
     country: z.string().optional(),
     currency: z.string().optional(),
   })
@@ -195,7 +219,7 @@ export const BUSINESS_ROUTES = {
     },
     responses: {
       [HttpStatusCodes.CREATED]: jsonContent(
-        zodResponseSchema(BusinessSchema),
+        zodResponseSchema(CreateBusinessResponseSchema),
         'Business created successfully'
       ),
       [HttpStatusCodes.CONFLICT]: jsonContent(zodResponseSchema(), 'Email already in use'),
