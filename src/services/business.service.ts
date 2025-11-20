@@ -415,12 +415,13 @@ export async function createBusiness(data: CreateBusinessInput) {
       phone: user.phoneNo,
       address: data.ownerAddress || null,
     },
-    commission: data.commissionType && data.commissionValue !== null && data.commissionValue !== undefined
-      ? {
-          commissionType: data.commissionType,
-          commissionValue: data.commissionValue,
-        }
-      : null,
+    commission:
+      data.commissionType && data.commissionValue !== null && data.commissionValue !== undefined
+        ? {
+            commissionType: data.commissionType,
+            commissionValue: data.commissionValue,
+          }
+        : null,
   }
 }
 
@@ -523,7 +524,7 @@ export async function updateBusinessCommission(businessId: number, data: UpdateC
 
   return {
     commissionType: commission.commissionType,
-    commissionValue: commission.commissionValue ?? null as any,
+    commissionValue: commission.commissionValue ?? (null as any),
   }
 }
 

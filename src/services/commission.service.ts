@@ -79,12 +79,13 @@ export async function createGlobalCommission(
   data: CreateGlobalCommissionInput
 ): Promise<CommissionResult> {
   // Normalize country code (USA -> US)
-  const normalizedCountry = data.country === 'USA' ? 'US' : (data.country || 'US')
-  
+  const normalizedCountry = data.country === 'USA' ? 'US' : data.country || 'US'
+
   // Handle maxTransactionAmt: 0 should be null
-  const maxTransactionAmt = data.maxTransactionAmt !== undefined && data.maxTransactionAmt > 0
-    ? data.maxTransactionAmt
-    : null
+  const maxTransactionAmt =
+    data.maxTransactionAmt !== undefined && data.maxTransactionAmt > 0
+      ? data.maxTransactionAmt
+      : null
 
   // Deactivate existing global active commissions for the same country/currency
   // biome-ignore lint/suspicious/noExplicitAny: Prisma nullable field query requires type assertion
@@ -261,7 +262,7 @@ export async function getAllCommissions(
       id: commission.id,
       businessId: commission.businessId,
       businessName: commission.businessId
-        ? (commission.business?.companyName || 'Unknown Business')
+        ? commission.business?.companyName || 'Unknown Business'
         : 'Global (All Organizations)',
       effectiveFrom: commission.effectiveFrom,
       country: commission.country,
@@ -311,7 +312,7 @@ export async function getCommissionById(id: number): Promise<CommissionResult | 
     id: commission.id,
     businessId: commission.businessId,
     businessName: commission.businessId
-      ? (commission.business?.companyName || 'Unknown Business')
+      ? commission.business?.companyName || 'Unknown Business'
       : 'Global (All Organizations)',
     effectiveFrom: commission.effectiveFrom,
     country: commission.country,
@@ -381,7 +382,7 @@ export async function updateCommission(
     id: updated.id,
     businessId: updated.businessId,
     businessName: updated.businessId
-      ? (updated.business?.companyName || 'Unknown Business')
+      ? updated.business?.companyName || 'Unknown Business'
       : 'Global (All Organizations)',
     effectiveFrom: updated.effectiveFrom,
     country: updated.country,

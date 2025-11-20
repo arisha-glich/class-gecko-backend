@@ -111,7 +111,10 @@ export const COMMISSIONS_ROUTES = {
       ),
       [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
       [HttpStatusCodes.FORBIDDEN]: jsonContent(zodResponseSchema(), 'Admin access required'),
-      [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(zodResponseSchema(), 'Failed to retrieve commissions') 
+      [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+        zodResponseSchema(),
+        'Failed to retrieve commissions'
+      ),
     },
   }),
 
@@ -133,7 +136,10 @@ export const COMMISSIONS_ROUTES = {
       [HttpStatusCodes.NOT_FOUND]: jsonContent(zodResponseSchema(), 'Commission not found'),
       [HttpStatusCodes.UNAUTHORIZED]: jsonContent(zodResponseSchema(), 'Authentication required'),
       [HttpStatusCodes.FORBIDDEN]: jsonContent(zodResponseSchema(), 'Admin access required'),
-      [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(zodResponseSchema(), 'Failed to retrieve commission')
+      [HttpStatusCodes.INTERNAL_SERVER_ERROR]: jsonContent(
+        zodResponseSchema(),
+        'Failed to retrieve commission'
+      ),
     },
   }),
 

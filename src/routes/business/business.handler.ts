@@ -94,7 +94,7 @@ export const BUSINESS_HANDLER: HandlerMapFromRoutes<typeof BUSINESS_ROUTES> = {
         ownerPhone: body.ownerPhone,
         ownerAddress: body.ownerAddress,
         commissionType: body.commissionType,
-        commissionValue: body.commissionValue ?? null as any,
+        commissionValue: body.commissionValue ?? (null as any),
         status: body.status,
       })
 

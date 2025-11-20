@@ -126,14 +126,15 @@ export const COMMISSIONS_HANDLER: HandlerMapFromRoutes<typeof COMMISSIONS_ROUTES
       )
     } catch (error) {
       console.error('Error creating global commission:', error)
-      
+
       // Return more detailed error message
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create global commission'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to create global commission'
       return c.json(
-        { 
+        {
           message: 'Failed to create global commission',
           error: errorMessage,
-          details: error instanceof Error ? error.stack : undefined
+          details: error instanceof Error ? error.stack : undefined,
         },
         HttpStatusCodes.INTERNAL_SERVER_ERROR
       )
